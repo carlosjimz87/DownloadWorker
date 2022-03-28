@@ -37,10 +37,9 @@ object WorkersManager {
 
     fun observeWorkerBy(workerId: UUID) {
         manager.getWorkInfoByIdLiveData(workerId).observe(activity) { workInfo ->
-            if (workInfo != null && workInfo.state == WorkInfo.State.FAILED) {
+            if (workInfo?.state == WorkInfo.State.FAILED) {
                 Timber.e("Download worker: ${workInfo.id} was failed")
-
-            } else if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
+            } else if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
                 Timber.w("Download worker: ${workInfo.id} was successful")
             }
         }

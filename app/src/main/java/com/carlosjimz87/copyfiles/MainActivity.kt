@@ -3,6 +3,7 @@ package com.carlosjimz87.copyfiles
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.OneTimeWorkRequest
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +37,5 @@ class MainActivity : AppCompatActivity() {
             // observe worker
             WorkersManager.observeWorkerBy(work.id)
         }
-
-        finishAffinity()
     }
 }
