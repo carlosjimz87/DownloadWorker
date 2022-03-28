@@ -37,43 +37,44 @@ class Copier(private val context: Context) {
             .unsafeRunSync()
     }
 
-    fun downloadFile(
+    private fun downloadFile(
         remotePath: String,
         destinationPath: String,
         fileName: String
     ): IO<Download> {
-
-        val download = Download(remotePath)
+        val download = Download(fileName)
         return IO {
             CoroutineScope(Dispatchers.IO).launch {
                 Timber.d("Thread Copier: ${Thread.currentThread().name}")
                 Timber.d("Downloading $fileName of $remotePath to Downloads")
-                val sourceUri: Uri = Uri.parse(remotePath)
-                val request = DownloadManager.Request(sourceUri)
-                request.setAllowedOverRoaming(true)
-                request.setAllowedOverMetered(true)
-                request.setTitle("Content")
-                request.setDescription("Content_download")
-                request.setDestinationInExternalFilesDir(
-                    context.applicationContext,
-                    Environment.DIRECTORY_DOWNLOADS,
-                    File.separator + fileName
-                )
 
-                request.setNotificationVisibility(
-                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-                )
-                try {
-                    downloadManager.enqueue(request)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                executeDownload(remotePath, fileName)
 
                 waitForDownloadToComplete()
+
                 copyFileAndDelete(destinationPath, fileName)
             }
             download
         }
+    }
+
+    private fun executeDownload(remotePath: String, fileName: String) {
+        val sourceUri: Uri = Uri.parse(remotePath)
+        val request = DownloadManager.Request(sourceUri)
+        request.setAllowedOverRoaming(true)
+        request.setAllowedOverMetered(true)
+        request.setTitle("Content")
+        request.setDescription("Content_download")
+        request.setDestinationInExternalFilesDir(
+            context.applicationContext,
+            Environment.DIRECTORY_DOWNLOADS,
+            File.separator + fileName
+        )
+
+        request.setNotificationVisibility(
+            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+        )
+        downloadManager.enqueue(request)
     }
 
 
@@ -83,13 +84,12 @@ class Copier(private val context: Context) {
     ) {
         val originFile = File(downloadsFolder, filename)
         val destinationFile = File(destinationPath, filename)
-        try {
 
-            Timber.d("Copying file $filename to ${destinationFile.absolutePath}")
+        Timber.d("Copying file $filename to ${destinationFile.absolutePath} and deleting it after")
+        try {
             originFile.copyTo(destinationFile, true)
             originFile.delete()
-        } catch (e: Exception) {
-            Timber.e("Error copying file $filename (${e.message})")
+        } catch (ignore: Exception) {
         }
     }
 
