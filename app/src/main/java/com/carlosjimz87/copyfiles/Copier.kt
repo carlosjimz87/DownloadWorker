@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
+import arrow.core.Either
+import arrow.fx.IO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,38 +22,57 @@ class Copier(private val context: Context) {
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
 
+
+    fun downloadFileFold(
+        remotePath: String,
+        destinationPath: String,
+        fileName: String
+    ): Either<Throwable, Download> {
+        return downloadFile(
+            remotePath,
+            destinationPath,
+            fileName
+        )
+            .attempt()
+            .unsafeRunSync()
+    }
+
     fun downloadFile(
         remotePath: String,
         destinationPath: String,
         fileName: String
-    ) {
+    ): IO<Download> {
 
-        CoroutineScope(Dispatchers.IO).launch {
-            Timber.d("Thread Copier: ${Thread.currentThread().name}")
-            Timber.d("Downloading $fileName of $remotePath to Downloads")
-            val sourceUri: Uri = Uri.parse(remotePath)
-            val request = DownloadManager.Request(sourceUri)
-            request.setAllowedOverRoaming(true)
-            request.setAllowedOverMetered(true)
-            request.setTitle("Content")
-            request.setDescription("Content_download")
-            request.setDestinationInExternalFilesDir(
-                context.applicationContext,
-                Environment.DIRECTORY_DOWNLOADS,
-                File.separator + fileName
-            )
+        val download = Download(remotePath)
+        return IO {
+            CoroutineScope(Dispatchers.IO).launch {
+                Timber.d("Thread Copier: ${Thread.currentThread().name}")
+                Timber.d("Downloading $fileName of $remotePath to Downloads")
+                val sourceUri: Uri = Uri.parse(remotePath)
+                val request = DownloadManager.Request(sourceUri)
+                request.setAllowedOverRoaming(true)
+                request.setAllowedOverMetered(true)
+                request.setTitle("Content")
+                request.setDescription("Content_download")
+                request.setDestinationInExternalFilesDir(
+                    context.applicationContext,
+                    Environment.DIRECTORY_DOWNLOADS,
+                    File.separator + fileName
+                )
 
-            request.setNotificationVisibility(
-                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-            )
-            try {
-                downloadManager.enqueue(request)
-            } catch (e: Exception) {
-                e.printStackTrace()
+                request.setNotificationVisibility(
+                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                )
+                try {
+                    downloadManager.enqueue(request)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                waitForDownloadToComplete()
+                copyFileAndDelete(destinationPath, fileName)
             }
-
-            waitForDownloadToComplete()
-            copyFileAndDelete(destinationPath, fileName)
+            download
         }
     }
 

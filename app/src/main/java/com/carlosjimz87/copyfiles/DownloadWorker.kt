@@ -16,34 +16,41 @@ class DownloadWorker(
 ) :
     CoroutineWorker(context, params) {
 
+    private val copier = Copier(applicationContext)
+
     override suspend fun doWork(): Result {
         Timber.d("Thread Worker ${Thread.currentThread().name}")
         val remotePath = inputData.getString("remotePath")
         val destinationPath = inputData.getString("destinationPath")
         val filename = inputData.getString("fileName")
+
+
         return withContext(dispatcher) {
-            Timber.d("Thread WithContext: ${Thread.currentThread().name}")
-            when (runAttemptCount < RETRIES) {
-                true -> {
+            when {
+                runAttemptCount < RETRIES -> {
                     if (remotePath != null && destinationPath != null && filename != null) {
-                        val copier = Copier(applicationContext)
-                        Timber.d("Executing Content DownloadWorker file: $filename destination: $destinationPath remote: $remotePath")
-                        copier.downloadFile(
+                        copier.downloadFileFold(
                             remotePath = remotePath,
                             destinationPath = destinationPath,
                             fileName = filename
+                        ).fold(
+                            {
+                                Timber.e("Error ${it.cause}. Retrying")
+                                Result.retry()
+                            }, {
+                                Timber.d("File $filename was downloaded successfully")
+                                Result.success()
+                            }
                         )
+
                     } else {
                         Result.failure()
                     }
                 }
-
                 else -> {
                     Result.success()
                 }
             }
-            Result.success()
         }
-
     }
 }

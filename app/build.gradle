@@ -46,6 +46,12 @@ dependencies {
     implementation "androidx.concurrent:concurrent-listenablefuture:1.0.0-beta01"
     implementation "androidx.concurrent:concurrent-listenablefuture-callback:1.0.0-beta01"
 
+    //ARROW
+    implementation "io.arrow-kt:arrow-fx:0.10.3"
+    implementation "io.arrow-kt:arrow-syntax:0.10.3"
+    implementation "io.arrow-kt:arrow-integration-retrofit-adapter:0.10.3"
+
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
