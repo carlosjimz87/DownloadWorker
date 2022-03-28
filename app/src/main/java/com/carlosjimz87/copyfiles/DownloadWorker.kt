@@ -19,18 +19,27 @@ class DownloadWorker(
         val remotePath = inputData.getString("remotePath")
         val destinationPath = inputData.getString("destinationPath")
         val filename = inputData.getString("fileName")
+
         return withContext(Dispatchers.IO) {
+
             Timber.d("Thread WithContext: ${Thread.currentThread().name}")
+
             when (runAttemptCount < RETRIES) {
                 true -> {
                     if (remotePath != null && destinationPath != null && filename != null) {
                         val copier = Copier(applicationContext)
+
                         Timber.d("Executing Content DownloadWorker file: $filename destination: $destinationPath remote: $remotePath")
-                        copier.downloadFile(
-                            remotePath = remotePath,
-                            destinationPath = destinationPath,
-                            fileName = filename
-                        )
+                        try {
+                            copier.downloadFile(
+                                remotePath = remotePath,
+                                destinationPath = destinationPath,
+                                fileName = filename
+                            )
+                        } catch (e: Exception) {
+                            Timber.e("Error downloading $filename (${e.message})")
+                            Result.failure()
+                        }
                     } else {
                         Result.failure()
                     }
