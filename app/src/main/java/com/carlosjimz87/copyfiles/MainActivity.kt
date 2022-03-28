@@ -3,7 +3,6 @@ package com.carlosjimz87.copyfiles
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.OneTimeWorkRequest
-import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,23 +21,22 @@ class MainActivity : AppCompatActivity() {
 
         val destination = this.filesDir.path
 
-        val workList = ArrayList<OneTimeWorkRequest>()
+        // initialize WorkManager
+        WorkersManager.init(this@MainActivity)
+
+
         photos.forEachIndexed { index, photoUri ->
+            // execute downloadContentWorker
             val work = WorkersManager.downloadContentWorker(
                 remotePath = photoUri,
                 destinationPath = destination,
                 fileName = names[index]
             )
-            workList.add(work)
+
+            // observe worker
+            WorkersManager.observeWorkerBy(work.id)
         }
 
-//        val copier = Copier(this)
-//        photos.forEachIndexed { index, photoUri ->
-//            copier.downloadFile(
-//                remotePath = photoUri,
-//                destinationPath = destination,
-//                fileName = names[index]
-//            )
-//        }
+        finishAffinity()
     }
 }

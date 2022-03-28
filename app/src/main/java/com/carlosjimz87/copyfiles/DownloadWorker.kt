@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.carlosjimz87.copyfiles.Constants.RETRIES
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -12,7 +11,6 @@ import timber.log.Timber
 class DownloadWorker(
     context: Context,
     params: WorkerParameters,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) :
     CoroutineWorker(context, params) {
 
@@ -21,7 +19,7 @@ class DownloadWorker(
         val remotePath = inputData.getString("remotePath")
         val destinationPath = inputData.getString("destinationPath")
         val filename = inputData.getString("fileName")
-        return withContext(dispatcher) {
+        return withContext(Dispatchers.IO) {
             Timber.d("Thread WithContext: ${Thread.currentThread().name}")
             when (runAttemptCount < RETRIES) {
                 true -> {
@@ -44,6 +42,5 @@ class DownloadWorker(
             }
             Result.success()
         }
-
     }
 }
