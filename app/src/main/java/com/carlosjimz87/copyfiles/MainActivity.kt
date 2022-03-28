@@ -1,8 +1,5 @@
 package com.carlosjimz87.copyfiles
 
-import android.app.ActivityManager
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 
@@ -13,10 +10,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val photos = listOf(
-            "https://www.pexels.com/photo/10852344/download/?search_query=&tracking_id=9715odxld8v",
+//            "https://www.pexels.com/photo/10852344/download/?search_query=&tracking_id=9715odxld8v",
+            "https://www.pexels.com/wrongurl", // wrong url
             "https://www.pexels.com/photo/11341064/download/?search_query=&tracking_id=9715odxld8v",
-            "https://www.pexels.com/photo/11567527/download/?search_query=&tracking_id=9715odxld8v"
-//            "https://www.pexels.com/photo/115623227/download/?search_query=&tracking_id=9715odxld8v" // wrong url
+            "https://www.pexels.com/photo/11567527/download/?search_query=&tracking_id=9715odxld8v",
         )
         val names = listOf(
             "castle.jpg",

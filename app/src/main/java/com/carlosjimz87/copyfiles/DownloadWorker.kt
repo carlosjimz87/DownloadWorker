@@ -7,6 +7,7 @@ import com.carlosjimz87.copyfiles.Constants.RETRIES
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 
 class DownloadWorker(
     context: Context,
@@ -35,8 +36,13 @@ class DownloadWorker(
                                 Timber.e("Error ${it.cause}. Retrying")
                                 Result.retry()
                             }, {
-                                Timber.d("File $filename was downloaded successfully")
-                                Result.success()
+                                if(File(destinationPath+File.separator + filename).exists()){
+                                    Timber.d("File $filename was downloaded successfully")
+                                    Result.success()
+                                }
+                                else{
+                                    Result.retry()
+                                }
                             }
                         )
 
