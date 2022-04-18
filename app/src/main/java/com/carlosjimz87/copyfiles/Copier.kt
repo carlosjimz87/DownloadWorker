@@ -88,8 +88,11 @@ class Copier(private val context: Context) {
         Timber.d("Copying file $filename to ${destinationFile.absolutePath} and deleting it after")
         try {
             originFile.copyTo(destinationFile, true)
+        } catch (e: Exception) {
+            Timber.e("Error copying file $filename (${e.message})")
+        } finally {
+            Timber.e("Deleting file ${originFile.name}")
             originFile.delete()
-        } catch (ignore: Exception) {
         }
     }
 

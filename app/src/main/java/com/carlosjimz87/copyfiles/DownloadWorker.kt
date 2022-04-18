@@ -12,6 +12,7 @@ import java.io.File
 class DownloadWorker(
     context: Context,
     params: WorkerParameters,
+    private val dummyParam: Download
 ) :
     CoroutineWorker(context, params) {
 
