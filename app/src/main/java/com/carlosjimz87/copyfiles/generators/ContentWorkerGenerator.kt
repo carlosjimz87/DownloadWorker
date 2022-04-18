@@ -6,7 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.work.*
 import com.carlosjimz87.copyfiles.models.Download
 import com.carlosjimz87.copyfiles.workers.CheckTokenWorker
-import com.carlosjimz87.copyfiles.workers.DownloadContentFileWorker
+import com.carlosjimz87.copyfiles.workers.DownloadContentWorker
 import com.carlosjimz87.copyfiles.workers.DownloadPlaylistWorker
 import timber.log.Timber
 import java.util.*
@@ -116,7 +116,7 @@ object ContentWorkerGenerator {
         md5: String
     ): OneTimeWorkRequest {
 
-        val worker = OneTimeWorkRequest.Builder(DownloadContentFileWorker::class.java)
+        val worker = OneTimeWorkRequest.Builder(DownloadContentWorker::class.java)
         val data = Data.Builder()
 
         data.putInt("content_id", contentID)

@@ -12,7 +12,7 @@ import timber.log.Timber
 import java.io.File
 
 
-class DownloadContentFileWorker(
+class DownloadContentWorker(
     context: Context,
     params: WorkerParameters
 ) :

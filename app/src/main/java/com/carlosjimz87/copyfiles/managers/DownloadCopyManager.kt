@@ -9,17 +9,16 @@ import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
-import com.carlosjimz87.copyfiles.core.getMD5Hash
+import com.carlosjimz87.copyfiles.core.copyToF
 import com.carlosjimz87.copyfiles.models.Download
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.carlosjimz87.copyfiles.models.DownloadRemote
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class Copier(private val context: Context) {
+class DownloadCopyManager(private val context: Context) {
     private val downloadManager: DownloadManager =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
@@ -29,7 +28,7 @@ class Copier(private val context: Context) {
         remotePath: String,
         destinationPath: String,
         fileName: String
-    ): Either<Throwable, Download> {
+    ): Either<Throwable, DownloadRemote> {
         return downloadFile(
             remotePath,
             destinationPath,
@@ -43,34 +42,29 @@ class Copier(private val context: Context) {
         remotePath: String,
         destinationPath: String,
         fileName: String
-    ): IO<Download> {
-
-        val file = File(destinationPath, fileName)
-
-        val download = Download(
-            fileName,
-            file,
-            file.getMD5Hash() + fileName,
-            file.path,
-        )
+    ): IO<DownloadRemote> {
 
         return IO {
-            CoroutineScope(Dispatchers.IO).launch {
-                Timber.d("Thread Copier: ${Thread.currentThread().name}")
-                Timber.d("Downloading $fileName of $remotePath to Downloads")
 
-                executeDownload(remotePath, fileName)
+            Timber.d("Downloading $fileName of $remotePath to Downloads")
 
-                waitForDownloadToComplete()
+            val download = DownloadRemote(
+                remotePath,
+                fileName,
+            )
 
-                copyFileAndDelete(destinationPath, fileName)
-            }
+            executeDownload(download)
+
+            waitForDownloadToComplete()
+
             download
+        }.flatMap {
+            copyFileAndDelete(destinationPath, fileName, it)
         }
     }
 
-    private fun executeDownload(remotePath: String, fileName: String) {
-        val sourceUri: Uri = Uri.parse(remotePath)
+    private fun executeDownload(download: DownloadRemote) {
+        val sourceUri: Uri = Uri.parse(download.remotePath)
         val request = DownloadManager.Request(sourceUri)
         request.setAllowedOverRoaming(true)
         request.setAllowedOverMetered(true)
@@ -79,31 +73,43 @@ class Copier(private val context: Context) {
         request.setDestinationInExternalFilesDir(
             context.applicationContext,
             Environment.DIRECTORY_DOWNLOADS,
-            File.separator + fileName
+            File.separator + download.fileName
         )
 
         request.setNotificationVisibility(
             DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
         )
+
         downloadManager.enqueue(request)
     }
 
 
     private fun copyFileAndDelete(
         destinationPath: String,
-        filename: String
-    ) {
-        val originFile = File(downloadsFolder, filename)
-        val destinationFile = File(destinationPath, filename)
+        filename: String,
+        download: DownloadRemote
+    ): IO<DownloadRemote> {
+        return IO {
+            val originFile = File(downloadsFolder, filename)
+            val destinationFile = File(destinationPath, filename)
+            val thread = Thread.currentThread().name
+            Timber.d("Copying file $filename from $downloadsFolder to $destinationPath on [$thread]")
 
-        Timber.d("Copying file $filename to ${destinationFile.absolutePath} and deleting it after")
-        try {
-            originFile.copyTo(destinationFile, true)
-        } catch (e: Exception) {
-            Timber.e("Error copying file $filename (${e.message})")
-        } finally {
-            Timber.e("Deleting file ${originFile.name}")
-            originFile.delete()
+            try {
+                originFile.copyTo(destinationFile, true)
+                originFile.deleteOnExit()
+            } catch (ex: Exception) {
+                when (ex) {
+                    is NoSuchFileException, is IOException, is FileSystemException -> {
+                        Timber.e("Error copying/deleting $filename (${ex.message}")
+                        throw ex
+                    }
+                    else -> {/*ignored*/
+                    }
+                }
+            }
+
+            download
         }
     }
 
@@ -113,7 +119,6 @@ class Copier(private val context: Context) {
             val downloadReceiver = object : BroadcastReceiver() {
                 override fun onReceive(c: Context, intent: Intent) {
                     val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-                    Timber.d("Download of ID:·$id received")
                     context.unregisterReceiver(this)
                     continuation.resume(id)
                 }
