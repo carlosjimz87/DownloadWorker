@@ -1,17 +1,10 @@
 package com.carlosjimz87.copyfiles
 
 import android.os.Bundle
-import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
-import com.carlosjimz87.copyfiles.managers.DownloadCopyManager
 import com.carlosjimz87.copyfiles.managers.FileManager
 import com.carlosjimz87.copyfiles.managers.SampleData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.io.File
 
 
 class MainActivity : AppCompatActivity() {

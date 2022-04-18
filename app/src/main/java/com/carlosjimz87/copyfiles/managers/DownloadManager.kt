@@ -9,8 +9,6 @@ import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
-import com.carlosjimz87.copyfiles.core.copyToF
-import com.carlosjimz87.copyfiles.models.Download
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 import timber.log.Timber
 import java.io.File
@@ -18,7 +16,7 @@ import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class DownloadCopyManager(private val context: Context) {
+class DownloadManager(private val context: Context) {
     private val downloadManager: DownloadManager =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
