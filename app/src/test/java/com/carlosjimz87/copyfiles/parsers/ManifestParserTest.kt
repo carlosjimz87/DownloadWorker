@@ -1,12 +1,14 @@
-package com.carlosjimz87.copyfiles
+package com.carlosjimz87.copyfiles.parsers
 
+import com.carlosjimz87.copyfiles.SampleData
+import com.carlosjimz87.copyfiles.models.Installation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-class TestClassTest {
+class ManifestParserTest {
 
     private val sampleResponse = listOf(
-        InstallationEntity(
+        Installation(
             filename = "copyfiles.apk",
             md5 = "8d0596706a2b704ada3c8bea5523bf38",
             order = "1"
@@ -15,8 +17,8 @@ class TestClassTest {
 
     @Test
     fun sample_manifest_parse_successfully() {
-        val parser = TestClass()
-        val resp = parser.parseManifest(SampleManifest.json)
+        val parser = ManifestParser()
+        val resp = parser.parseManifest(SampleData.manifestJson)
 
         assertThat(resp).isEqualTo(
             sampleResponse

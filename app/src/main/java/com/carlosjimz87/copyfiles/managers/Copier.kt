@@ -1,4 +1,4 @@
-package com.carlosjimz87.copyfiles
+package com.carlosjimz87.copyfiles.managers
 
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
@@ -9,6 +9,8 @@ import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
+import com.carlosjimz87.copyfiles.core.getMD5Hash
+import com.carlosjimz87.copyfiles.models.Download
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,7 +44,16 @@ class Copier(private val context: Context) {
         destinationPath: String,
         fileName: String
     ): IO<Download> {
-        val download = Download(fileName)
+
+        val file = File(destinationPath, fileName)
+
+        val download = Download(
+            fileName,
+            file,
+            file.getMD5Hash() + fileName,
+            file.path,
+        )
+
         return IO {
             CoroutineScope(Dispatchers.IO).launch {
                 Timber.d("Thread Copier: ${Thread.currentThread().name}")

@@ -1,4 +1,4 @@
-package com.carlosjimz87.copyfiles
+package com.carlosjimz87.copyfiles.core
 
 object Constants {
 

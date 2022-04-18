@@ -1,10 +1,10 @@
-package com.carlosjimz87.copyfiles
+package com.carlosjimz87.copyfiles.models
 
 import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class InstallationEntity(
+data class Installation(
     val filename: String,
     val md5: String,
     val order: String
