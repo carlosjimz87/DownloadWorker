@@ -3,7 +3,7 @@ package com.carlosjimz87.copyfiles
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.carlosjimz87.copyfiles.managers.FileManager
-import com.carlosjimz87.copyfiles.managers.SampleData
+import com.carlosjimz87.copyfiles.core.SampleData
 import timber.log.Timber
 
 

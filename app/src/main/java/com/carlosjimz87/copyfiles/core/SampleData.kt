@@ -1,4 +1,4 @@
-package com.carlosjimz87.copyfiles.managers
+package com.carlosjimz87.copyfiles.core
 
 object SampleData {
     val photos = listOf(
