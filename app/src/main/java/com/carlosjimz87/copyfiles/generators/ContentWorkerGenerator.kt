@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import androidx.work.*
 import com.carlosjimz87.copyfiles.models.Download
-import com.carlosjimz87.copyfiles.workers.CheckTokenWorker
+import com.carlosjimz87.copyfiles.workers.DummyInitWorker
 import com.carlosjimz87.copyfiles.workers.DownloadContentWorker
 import com.carlosjimz87.copyfiles.workers.DownloadPlaylistWorker
 import timber.log.Timber
@@ -59,7 +59,7 @@ object ContentWorkerGenerator {
 
         Timber.d("Gen contentsWorkers for ${downloads.size} downloads")
 
-        val checkTokenWorker = generateWorker(CheckTokenWorker::class.java)
+        val checkTokenWorker = generateWorker(DummyInitWorker::class.java)
         val downloadsWorkList = generateDownloadWorkerList(downloads)
         val idsSum = downloads.map { it.identifier.toInt() }.reduce { acc, id -> acc + id }
 
@@ -82,7 +82,7 @@ object ContentWorkerGenerator {
         isManager()
         Timber.d("Gen playlistWorker for $actionId")
 
-        val checkTokenWorker = generateWorker(CheckTokenWorker::class.java)
+        val checkTokenWorker = generateWorker(DummyInitWorker::class.java)
         val downloadBackgroundWorker = downloadPlaylistWorker(
             Integer.parseInt(actionId),
             path

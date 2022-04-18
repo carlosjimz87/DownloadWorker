@@ -8,7 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 
-class CheckTokenWorker(
+class DummyInitWorker(
     context: Context,
     params: WorkerParameters
 ) :
