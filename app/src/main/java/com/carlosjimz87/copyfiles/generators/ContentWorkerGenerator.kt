@@ -28,7 +28,7 @@ object ContentWorkerGenerator {
         inputData: Data? = null,
         backoffPolicy: BackoffPolicy = BackoffPolicy.LINEAR,
         backoffDelay: Long = 10 * 1000,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        timeUnit: TimeUnit = TimeUnit.MILLISECONDS
     ): OneTimeWorkRequest {
 
         val worker = OneTimeWorkRequest.Builder(workerClass)

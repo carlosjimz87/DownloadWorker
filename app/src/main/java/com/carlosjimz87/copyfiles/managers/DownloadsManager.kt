@@ -5,10 +5,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
+import com.carlosjimz87.copyfiles.core.copyToF
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 import timber.log.Timber
 import java.io.File
@@ -16,7 +18,8 @@ import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class DownloadManager(private val context: Context) {
+
+class DownloadsManager(private val context: Context) {
     private val downloadManager: DownloadManager =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
@@ -43,13 +46,14 @@ class DownloadManager(private val context: Context) {
     ): IO<DownloadRemote> {
 
         return IO {
-
             Timber.d("Downloading $fileName of $remotePath to Downloads")
 
             val download = DownloadRemote(
                 remotePath,
                 fileName,
             )
+
+            if(checkIfAlreadyDownloaded(File(destinationPath, fileName))) return@IO download
 
             executeDownload(download)
 
@@ -68,6 +72,9 @@ class DownloadManager(private val context: Context) {
         request.setAllowedOverMetered(true)
         request.setTitle("Content")
         request.setDescription("Content_download")
+
+        Timber.d("Execute download for ${download.fileName} from ${download.remotePath}]")
+
         request.setDestinationInExternalFilesDir(
             context.applicationContext,
             Environment.DIRECTORY_DOWNLOADS,
@@ -81,6 +88,30 @@ class DownloadManager(private val context: Context) {
         downloadManager.enqueue(request)
     }
 
+    private fun checkIfAlreadyDownloaded(file: File): Boolean {
+        var isDownloading = false
+        val query = DownloadManager.Query()
+        query.setFilterByStatus(
+            DownloadManager.STATUS_PAUSED or
+                    DownloadManager.STATUS_PENDING or
+                    DownloadManager.STATUS_RUNNING or
+                    DownloadManager.STATUS_SUCCESSFUL
+        )
+        val cur: Cursor = downloadManager.query(query)
+        cur.use {
+            val col = it.getColumnIndex(
+                DownloadManager.COLUMN_LOCAL_FILENAME
+            )
+            cur.moveToFirst()
+            while (!cur.isAfterLast) {
+                isDownloading = isDownloading || (file.path.trim() == cur.getString(col).trim())
+                if(isDownloading) break
+                cur.moveToNext()
+            }
+        }
+        return isDownloading
+    }
+
 
     private fun copyFileAndDelete(
         destinationPath: String,
@@ -88,14 +119,14 @@ class DownloadManager(private val context: Context) {
         download: DownloadRemote
     ): IO<DownloadRemote> {
         return IO {
-            val originFile = File(downloadsFolder, filename)
+            val downloadedFile = File(downloadsFolder, filename)
             val destinationFile = File(destinationPath, filename)
-            val thread = Thread.currentThread().name
-            Timber.d("Copying file $filename from $downloadsFolder to $destinationPath on [$thread]")
+
+            Timber.d("Copying file $filename from $downloadsFolder to $destinationPath")
 
             try {
-                originFile.copyTo(destinationFile, true)
-                originFile.deleteOnExit()
+                downloadedFile.copyToF(destinationFile, true)
+                downloadedFile.delete()
             } catch (ex: Exception) {
                 when (ex) {
                     is NoSuchFileException, is IOException, is FileSystemException -> {
@@ -114,8 +145,11 @@ class DownloadManager(private val context: Context) {
 
     private suspend fun waitForDownloadToComplete(): Long {
         return suspendCoroutine { continuation ->
+            Timber.d("Waiting for download to complete")
             val downloadReceiver = object : BroadcastReceiver() {
+
                 override fun onReceive(c: Context, intent: Intent) {
+
                     val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
                     context.unregisterReceiver(this)
                     continuation.resume(id)
