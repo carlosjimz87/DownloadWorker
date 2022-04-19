@@ -56,7 +56,7 @@ class FileManager private constructor(
             }
 
             file.createNewFile().also {
-                if(it) {
+                if (it) {
                     file.delete()
                 }
             }

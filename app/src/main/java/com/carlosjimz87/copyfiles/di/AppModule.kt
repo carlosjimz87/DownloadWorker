@@ -3,13 +3,11 @@ package com.carlosjimz87.copyfiles.di
 import android.app.Application
 import android.app.DownloadManager
 import android.content.Context
-import android.os.Environment
 import com.carlosjimz87.copyfiles.managers.DownloadsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import java.io.File
 import javax.inject.Singleton
 
 @Module

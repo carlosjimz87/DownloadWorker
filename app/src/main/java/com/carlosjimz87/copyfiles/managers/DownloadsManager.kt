@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
-import com.carlosjimz87.copyfiles.core.copyToF
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 import timber.log.Timber
 import java.io.File

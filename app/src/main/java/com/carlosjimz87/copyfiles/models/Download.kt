@@ -2,7 +2,7 @@ package com.carlosjimz87.copyfiles.models
 
 import java.io.File
 
-data class Download (
+data class Download(
     val filename: String,
     val localPath: File,
     val identifier: String = "0",

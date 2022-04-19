@@ -5,9 +5,9 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import androidx.work.*
 import com.carlosjimz87.copyfiles.models.Download
-import com.carlosjimz87.copyfiles.workers.DummyInitWorker
 import com.carlosjimz87.copyfiles.workers.DownloadContentWorker
 import com.carlosjimz87.copyfiles.workers.DownloadPlaylistWorker
+import com.carlosjimz87.copyfiles.workers.DummyInitWorker
 import timber.log.Timber
 import java.util.*
 import java.util.concurrent.TimeUnit
