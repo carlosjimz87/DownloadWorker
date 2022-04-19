@@ -28,20 +28,23 @@ class MainActivity : AppCompatActivity() {
         Timber.w("DATA_DESTINATION: $dataDestination")
         Timber.w("EXTERNAL_DESTINATION: $extDestination")
 
-        dataDestination?.let {
-            val uri = SampleData.photos[0]
-            val name = SampleData.names[0]
+        dataDestination?.let { destination ->
 
-            for (i in 0..3) {
+            val uri = SampleData.photos.forEachIndexed { i, photo ->
 
-                downloadCopyManager.downloadFileFold(uri, it, name).fold(
-                    {
-                        Timber.e("Error")
-                    },
-                    {
-                        Timber.d("Downloaded")
-                    }
-                )
+                val name = SampleData.names[i]
+
+                for (i in 0..2) {   // repeat same download
+
+                    downloadCopyManager.downloadFileFold(photo, destination, name).fold(
+                        {
+                            Timber.e("Error")
+                        },
+                        {
+                            Timber.d("Downloaded")
+                        }
+                    )
+                }
             }
         }
 

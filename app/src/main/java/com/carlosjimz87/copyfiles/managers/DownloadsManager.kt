@@ -52,9 +52,19 @@ class DownloadsManager @Inject constructor(
             val download = DownloadRemote(
                 remotePath,
                 fileName,
+                destinationPath
             )
 
-            if (checkIfAlreadyDownloaded(File(destinationPath, fileName))) return@IO download
+            val downloadedFile = File(downloadsFolder, fileName)
+//            if (checkIfPrevDownloading(downloadedFile)) {
+//                Timber.d("File $fileName already downloading.")
+//                return@IO download.copy(shouldCopy = false)
+//            }
+
+//            if (checkIfAlreadyDownloaded(downloadedFile)) {
+//                Timber.d("File $fileName already downloaded.")
+//                return@IO download
+//            }
 
             executeDownload(download)
 
@@ -62,7 +72,7 @@ class DownloadsManager @Inject constructor(
 
             download
         }.flatMap {
-            copyFileAndDelete(destinationPath, fileName, it)
+            copyFileAndDelete(it)
         }
     }
 
@@ -89,7 +99,11 @@ class DownloadsManager @Inject constructor(
         downloadManager.enqueue(request)
     }
 
-    private fun checkIfAlreadyDownloaded(file: File): Boolean {
+    private fun checkIfAlreadyDownloaded(downloadedFile: File): Boolean {
+        return downloadedFile.exists()
+    }
+
+    private fun checkIfPrevDownloading(file: File): Boolean {
         var isDownloading = false
         val query = DownloadManager.Query()
         query.setFilterByStatus(
@@ -106,6 +120,7 @@ class DownloadsManager @Inject constructor(
             cur.moveToFirst()
             while (!cur.isAfterLast) {
                 isDownloading = isDownloading || (file.path.trim() == cur.getString(col).trim())
+                Timber.d("Checking ${file.path.trim()} == ${cur.getString(col).trim()}")
                 if (isDownloading) break
                 cur.moveToNext()
             }
@@ -115,15 +130,13 @@ class DownloadsManager @Inject constructor(
 
 
     private fun copyFileAndDelete(
-        destinationPath: String,
-        filename: String,
         download: DownloadRemote
     ): IO<DownloadRemote> {
         return IO {
-            val downloadedFile = File(downloadsFolder, filename)
-            val destinationFile = File(destinationPath, filename)
+            val downloadedFile = File(downloadsFolder, download.fileName)
+            val destinationFile = File(download.destination, download.fileName)
 
-            Timber.d("Copying file $filename from $downloadsFolder to $destinationPath")
+            Timber.d("Copying file ${download.fileName} from $downloadsFolder to ${download.destination}")
 
             try {
                 downloadedFile.copyTo(destinationFile, true)
@@ -131,7 +144,7 @@ class DownloadsManager @Inject constructor(
             } catch (ex: Exception) {
                 when (ex) {
                     is NoSuchFileException, is IOException, is FileSystemException -> {
-                        Timber.e("Error copying/deleting $filename (${ex.message}")
+                        Timber.e("Error copying/deleting ${download.fileName} (${ex.message}")
                         throw ex
                     }
                     else -> {/*ignored*/
