@@ -2,19 +2,23 @@ package com.carlosjimz87.copyfiles
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.carlosjimz87.copyfiles.managers.FileManager
 import com.carlosjimz87.copyfiles.core.SampleData
 import com.carlosjimz87.copyfiles.managers.DownloadsManager
+import com.carlosjimz87.copyfiles.managers.FileManager
+import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
+import javax.inject.Inject
 
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    @Inject
     lateinit var downloadCopyManager: DownloadsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        downloadCopyManager = DownloadsManager(baseContext)
 
 
         val manager = FileManager.Builder.init(baseContext)
@@ -28,7 +32,7 @@ class MainActivity : AppCompatActivity() {
             val uri = SampleData.photos[0]
             val name = SampleData.names[0]
 
-            for(i in 0..3){
+            for (i in 0..3) {
 
                 downloadCopyManager.downloadFileFold(uri, it, name).fold(
                     {

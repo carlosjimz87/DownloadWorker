@@ -15,15 +15,17 @@ import com.carlosjimz87.copyfiles.models.DownloadRemote
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
+import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
-class DownloadsManager(private val context: Context) {
-    private val downloadManager: DownloadManager =
-        context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+class DownloadsManager @Inject constructor(
+    private val context: Context,
+    private val downloadManager: DownloadManager,
+) {
 
+    private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
 
     fun downloadFileFold(
         remotePath: String,
@@ -53,7 +55,7 @@ class DownloadsManager(private val context: Context) {
                 fileName,
             )
 
-            if(checkIfAlreadyDownloaded(File(destinationPath, fileName))) return@IO download
+            if (checkIfAlreadyDownloaded(File(destinationPath, fileName))) return@IO download
 
             executeDownload(download)
 
@@ -105,7 +107,7 @@ class DownloadsManager(private val context: Context) {
             cur.moveToFirst()
             while (!cur.isAfterLast) {
                 isDownloading = isDownloading || (file.path.trim() == cur.getString(col).trim())
-                if(isDownloading) break
+                if (isDownloading) break
                 cur.moveToNext()
             }
         }
@@ -125,7 +127,7 @@ class DownloadsManager(private val context: Context) {
             Timber.d("Copying file $filename from $downloadsFolder to $destinationPath")
 
             try {
-                downloadedFile.copyToF(destinationFile, true)
+                downloadedFile.copyTo(destinationFile, true)
                 downloadedFile.delete()
             } catch (ex: Exception) {
                 when (ex) {
