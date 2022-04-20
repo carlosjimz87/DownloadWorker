@@ -1,25 +1,34 @@
 package com.carlosjimz87.copyfiles.workers
 
 import android.content.Context
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import arrow.core.Either
+import com.carlosjimz87.copyfiles.core.Constants.DOWNLOAD_CHANNEL_ID
+import com.carlosjimz87.copyfiles.core.Constants.DOWNLOAD_CHANNEL_NAME
 import com.carlosjimz87.copyfiles.core.Constants.RETRIES
-import com.carlosjimz87.copyfiles.models.Download
+import com.carlosjimz87.copyfiles.managers.DownloadsManager
+import com.carlosjimz87.copyfiles.models.DownloadRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import javax.inject.Inject
+import kotlin.random.Random
 
 
 class DownloadContentWorker(
-    context: Context,
+    val context: Context,
     params: WorkerParameters
 ) :
     CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
+    @Inject
+    lateinit var downloadsManager: DownloadsManager
 
+    override suspend fun doWork(): Result {
+        startForegroundService()
         val contentID = inputData.getInt("content_id", 0)
         val folder = inputData.getString("folder")
         val filename = inputData.getString("filename")
@@ -27,9 +36,16 @@ class DownloadContentWorker(
         Timber.d("Executing Content DownloadWorker for $contentID file: $filename to folder: $folder md5 $md5")
 
         return withContext(Dispatchers.IO) {
+
+            val download = DownloadRemote(
+                contentID.toLong(),
+                "photo",
+                File(folder, filename).path
+            )
+
             when {
                 runAttemptCount < RETRIES -> {
-                    downloadContent(contentID, folder!!, filename!!, md5!!).fold(
+                    downloadsManager.download(download, DownloadsManager.METHOD.RETROFIT).fold(
                         {
                             Timber.e("Error ${it.cause}")
                             Result.retry()
@@ -48,23 +64,15 @@ class DownloadContentWorker(
     }
 
 
-    private suspend fun downloadContent(
-        contentID: Int,
-        folder: String,
-        filename: String,
-        md5: String
-    ): Either<Throwable, Download> {
-//        return downloadContentFile(
-//            DownloadContentFile.Params(
-//                contentID,
-//                folder,
-//                filename,
-//                md5
-//            )
-//        )
-//            .attempt()
-//            .unsafeRunSync()
-        return Either.right(Download("contentID", File(filename), md5))
+    private suspend fun startForegroundService() {
+        setForeground(
+            ForegroundInfo(
+                Random.nextInt(),
+                NotificationCompat.Builder(context, DOWNLOAD_CHANNEL_ID)
+                    .setContentText("Downloading...")
+                    .setContentTitle(DOWNLOAD_CHANNEL_NAME)
+                    .build()
+            )
+        )
     }
-
 }

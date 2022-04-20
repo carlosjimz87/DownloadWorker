@@ -1,5 +1,6 @@
 package com.carlosjimz87.copyfiles.managers
 
+import android.accounts.NetworkErrorException
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,61 +11,54 @@ import android.net.Uri
 import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
+import com.carlosjimz87.copyfiles.core.Constants.BASE_URL
+import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.models.DownloadRemote
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
+@Suppress("BlockingMethodInNonBlockingContext")
 class DownloadsManager @Inject constructor(
     private val context: Context,
     private val downloadManager: DownloadManager,
+    private val downloaderApi: DownloaderApi,
 ) {
+    enum class METHOD {
+        RETROFIT,
+        MANAGER
+    }
 
     private val downloadsFolder = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
 
-    fun downloadFileFold(
-        remotePath: String,
-        destinationPath: String,
-        fileName: String
+    suspend fun download(
+        download: DownloadRemote,
+        method: METHOD = METHOD.RETROFIT
     ): Either<Throwable, DownloadRemote> {
-        return downloadFile(
-            remotePath,
-            destinationPath,
-            fileName
-        )
-            .attempt()
-            .unsafeRunSync()
+
+        return when (method) {
+            METHOD.RETROFIT -> downloadWithRetrofit(download)
+            METHOD.MANAGER -> downloadWithManager(download)
+                .attempt()
+                .unsafeRunSync()
+        }
     }
 
-    private fun downloadFile(
-        remotePath: String,
-        destinationPath: String,
-        fileName: String
+
+    private fun downloadWithManager(
+        download: DownloadRemote,
     ): IO<DownloadRemote> {
 
         return IO {
-            Timber.d("Downloading $fileName of $remotePath to Downloads")
-
-            val download = DownloadRemote(
-                remotePath,
-                fileName,
-                destinationPath
-            )
-
-            val downloadedFile = File(downloadsFolder, fileName)
-//            if (checkIfPrevDownloading(downloadedFile)) {
-//                Timber.d("File $fileName already downloading.")
-//                return@IO download.copy(shouldCopy = false)
-//            }
-
-//            if (checkIfAlreadyDownloaded(downloadedFile)) {
-//                Timber.d("File $fileName already downloaded.")
-//                return@IO download
-//            }
+            Timber.d("Downloading ${download.id} with Manager")
 
             executeDownload(download)
 
@@ -76,20 +70,64 @@ class DownloadsManager @Inject constructor(
         }
     }
 
+    @Throws(Exception::class)
+    suspend fun downloadWithRetrofit(download: DownloadRemote): Either<Throwable, DownloadRemote> {
+        Timber.d("Downloading ${download.name} with Retrofit")
+        val response = downloaderApi.getFile(download.type, download.id)
+
+        response.body()?.let { body ->
+
+            Timber.d("Reading $body")
+
+            return withContext(Dispatchers.IO) {
+                val file = File(download.destination, download.name)
+                Timber.d("Creating stream File at ${file.path}")
+
+                copyBody(file, body, download)
+            }
+        }
+        if (!response.isSuccessful) {
+            Timber.e("Network error ${response.code()}: ${response.message()}")
+            return Either.left(NetworkErrorException("Network error ${response.code()}: ${response.message()}"))
+        }
+        Timber.e("Unknown error $response")
+        return Either.left(UnknownError("Unknown error"))
+    }
+
+    private fun copyBody(
+        file: File,
+        body: ResponseBody,
+        download: DownloadRemote
+    ): Either<Throwable, DownloadRemote> {
+        return FileOutputStream(file).use { stream ->
+            Timber.d("Writing $body to stream")
+            return@use try {
+                stream.write(body.bytes())
+
+                Timber.d("Download completed")
+                Either.right(download)
+            } catch (e: IOException) {
+                Timber.e("Error writing to stream ${e.message}")
+                Either.left(e)
+            }
+        }
+    }
+
     private fun executeDownload(download: DownloadRemote) {
-        val sourceUri: Uri = Uri.parse(download.remotePath)
+
+        val sourceUri: Uri = Uri.parse("$BASE_URL/${download.type}/${download.id}/download/")
         val request = DownloadManager.Request(sourceUri)
         request.setAllowedOverRoaming(true)
         request.setAllowedOverMetered(true)
         request.setTitle("Content")
         request.setDescription("Content_download")
 
-        Timber.d("Execute download for ${download.fileName} from ${download.remotePath}]")
+        Timber.d("Execute download for ${download.name}")
 
         request.setDestinationInExternalFilesDir(
             context.applicationContext,
             Environment.DIRECTORY_DOWNLOADS,
-            File.separator + download.fileName
+            File.separator + download.name
         )
 
         request.setNotificationVisibility(
@@ -133,10 +171,10 @@ class DownloadsManager @Inject constructor(
         download: DownloadRemote
     ): IO<DownloadRemote> {
         return IO {
-            val downloadedFile = File(downloadsFolder, download.fileName)
-            val destinationFile = File(download.destination, download.fileName)
+            val downloadedFile = File(downloadsFolder, download.name)
+            val destinationFile = File(download.destination, download.name)
 
-            Timber.d("Copying file ${download.fileName} from $downloadsFolder to ${download.destination}")
+            Timber.d("Copying file ${download.name} from $downloadsFolder to ${download.destination}")
 
             try {
                 downloadedFile.copyTo(destinationFile, true)
@@ -144,7 +182,7 @@ class DownloadsManager @Inject constructor(
             } catch (ex: Exception) {
                 when (ex) {
                     is NoSuchFileException, is IOException, is FileSystemException -> {
-                        Timber.e("Error copying/deleting ${download.fileName} (${ex.message}")
+                        Timber.e("Error copying/deleting ${downloadedFile.path} (${ex.message}")
                         throw ex
                     }
                     else -> {/*ignored*/

@@ -66,8 +66,9 @@ dependencies {
     //ARROW
     implementation "io.arrow-kt:arrow-fx:0.10.3"
     implementation "io.arrow-kt:arrow-syntax:0.10.3"
-    implementation "io.arrow-kt:arrow-integration-retrofit-adapter:0.10.3"
 
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "com.google.truth:truth:1.1.3"

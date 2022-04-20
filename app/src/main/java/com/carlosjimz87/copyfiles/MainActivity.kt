@@ -2,7 +2,9 @@ package com.carlosjimz87.copyfiles
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.carlosjimz87.copyfiles.core.SampleData
+import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.managers.DownloadsManager
 import com.carlosjimz87.copyfiles.managers.FileManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,6 +18,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var downloadCopyManager: DownloadsManager
 
+    @Inject
+    lateinit var downloaderApi: DownloaderApi
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -28,42 +33,35 @@ class MainActivity : AppCompatActivity() {
         Timber.w("DATA_DESTINATION: $dataDestination")
         Timber.w("EXTERNAL_DESTINATION: $extDestination")
 
-        dataDestination?.let { destination ->
+        executeDownload(extDestination)
+    }
 
-            val uri = SampleData.photos.forEachIndexed { i, photo ->
+    private fun executeDownload(dataDestination: String?) {
+        lifecycleScope.launchWhenStarted {
+            dataDestination?.let { destination ->
+                SampleData.photosDownload.forEach { download ->
 
-                val name = SampleData.names[i]
+                    val finalDownload = download.copy(
+                        destination = destination,
+                    )
 
-                for (i in 0..2) {   // repeat same download
+                    Timber.d("Proceed to download $download in $destination")
+                    // execute download via RETROFIT
 
-                    downloadCopyManager.downloadFileFold(photo, destination, name).fold(
+                    downloadCopyManager.download(
+                        finalDownload,
+                        DownloadsManager.METHOD.RETROFIT
+                    ).fold(
                         {
-                            Timber.e("Error")
+                            Timber.e("DOWNLOAD FAILED: ${it.message}")
                         },
                         {
-                            Timber.d("Downloaded")
+                            Timber.d("DOWNLOAD SUCCEEDED")
                         }
                     )
                 }
             }
-        }
-
-        extDestination?.let { destination ->
-
-            SampleData.photos.forEachIndexed { index, uri ->
-                val name = SampleData.names[index]
-                Timber.d("Proceed to download $name from $uri in $destination")
-                downloadCopyManager.downloadFileFold(uri, destination, name).fold(
-                    {
-                        Timber.e("Error")
-                    },
-                    {
-                        Timber.d("Downloaded")
-                    }
-                )
-            }
 
         }
-
     }
 }
