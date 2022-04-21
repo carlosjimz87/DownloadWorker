@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.lang.Exception
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -45,19 +46,26 @@ class DownloadContentWorker(
 
             when {
                 runAttemptCount < RETRIES -> {
-                    downloadsManager.download(download, DownloadsManager.METHOD.RETROFIT).fold(
-                        {
-                            Timber.e("Error ${it.cause}")
-                            Result.retry()
-                        },
-                        {
-                            Timber.d("Content downloaded $contentID")
-                            Result.success()
-                        }
-                    )
+                    try {
+                        downloadsManager.download(download, DownloadsManager.METHOD.RETROFIT)
+                        Result.success()
+                    }
+                    catch (e:Exception){
+                        Result.failure()
+                    }
+//                        .fold(
+//                        {
+//                            Timber.e("Error ${it.cause}")
+//                            Result.retry()
+//                        },
+//                        {
+//                            Timber.d("Content downloaded $contentID")
+//                            Result.success()
+//                        }
+//                    )
                 }
                 else -> {
-                    Result.success()
+                    Result.failure()
                 }
             }
         }

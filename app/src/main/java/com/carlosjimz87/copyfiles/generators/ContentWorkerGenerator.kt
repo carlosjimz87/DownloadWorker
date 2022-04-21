@@ -13,15 +13,11 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 
-object ContentWorkerGenerator {
+private const val TIMEOUT = 10 * 1000L
 
-    private const val TIMEOUT = 10 * 1000L
+class ContentWorkerGenerator(context: Context) {
 
-    private var workManager: WorkManager? = null
-
-    fun init(context: Context) {
-        workManager = WorkManager.getInstance(context)
-    }
+    private var workManager: WorkManager = WorkManager.getInstance(context)
 
     private fun generateWorker(
         workerClass: Class<out ListenableWorker>,
@@ -46,17 +42,7 @@ object ContentWorkerGenerator {
         return worker.build()
     }
 
-    @Throws(IllegalArgumentException::class)
-    fun isManager(): WorkManager {
-        if (workManager == null) {
-            throw IllegalStateException("WorkManager is not initialized")
-        }
-        return workManager!!
-    }
-
     fun beginDownloadWorkers(downloads: ArrayList<Download>): Pair<UUID, List<UUID>> {
-        isManager()
-
         Timber.d("Gen contentsWorkers for ${downloads.size} downloads")
 
         val checkTokenWorker = generateWorker(DummyInitWorker::class.java)
@@ -79,7 +65,6 @@ object ContentWorkerGenerator {
     }
 
     fun beginPlaylistWorker(actionId: String, path: String): Pair<UUID, UUID> {
-        isManager()
         Timber.d("Gen playlistWorker for $actionId")
 
         val checkTokenWorker = generateWorker(DummyInitWorker::class.java)
@@ -170,9 +155,8 @@ object ContentWorkerGenerator {
         succeed: (() -> Unit)? = null,
         failed: (() -> Unit)? = null
     ) {
-        isManager()
 
-        workManager!!.getWorkInfoByIdLiveData(workerId).observe(
+        workManager.getWorkInfoByIdLiveData(workerId).observe(
             owner
         ) { workInfo ->
             Timber.d("Handling Worker $workerId status ${workInfo?.state}")

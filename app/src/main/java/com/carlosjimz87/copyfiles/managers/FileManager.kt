@@ -7,7 +7,6 @@ import java.io.File
 
 class FileManager private constructor(
     private val context: Context,
-//    private val cacheDir: String = context.cacheDir.path,
     private val dataAppPath: String = context.filesDir.path,
     private val externalAppPath: String = context.getExternalFilesDir(null)?.path ?: "",
     private val sourceAppPath: String =
