@@ -8,37 +8,38 @@ object SampleData {
 
     val photosDownload = listOf(
         DownloadRemote(
-            id = 10852344L,
+            id = 1L,
             type = PHOTO_TYPE,
-            url = "/photo/10852344/download/",
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/snowskate-winter-sports1920x1080.png",
         ),
         DownloadRemote(
-            id = 11341064L,
+            id = 2L,
             type = PHOTO_TYPE,
-            url = "/photo/11341064/download/",
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/4kparacaidistas-skydive.jpg",
         ),
         DownloadRemote(
-            id = 11567527L,
+            id = 3L,
             type = PHOTO_TYPE,
-            url = "/photo/11567527/download/",
+            url = "https://www.pexels.com/photo/11780920/download/?search_query=&tracking_id=ah6g7at4jei",
         )
+
     )
 
     val videosDownload = listOf(
         DownloadRemote(
-            id = 3818213L,
+            id = 4L,
             type = VIDEO_TYPE,
-            url = "/video/3818213/download/",
+            url = "https://www.pexels.com/video/3818213/download/",
         ),
         DownloadRemote(
-            id = 8116496L,
+            id = 5L,
             type = VIDEO_TYPE,
-            url = "/video/8116496/download/",
+            url = "https://www.pexels.com/video/8116496/download/",
         ),
         DownloadRemote(
-            id = 11257476L,
+            id = 6L,
             type = VIDEO_TYPE,
-            url = "/video/1321208/download/", // big
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/365_0910_BlueBayou_HD.mp4", // big
         )
     )
 }

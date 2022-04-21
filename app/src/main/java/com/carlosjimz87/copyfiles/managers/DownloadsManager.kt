@@ -67,19 +67,17 @@ class DownloadsManager @Inject constructor(
     @Throws(Exception::class)
     suspend fun downloadWithRetrofit(download: DownloadRemote): DownloadRemote {
         Timber.d("Downloading ${download.name} with Retrofit")
-        val response = downloaderApi.getFile(download.type, download.id)
-//        val response = downloaderApi.getFile("$BASE_URL${download.url}")
+//        val response = downloaderApi.getFile(download.type, download.id)
+        val response = downloaderApi.getFile(download.url)
 
         response.body()?.let { body ->
 
             Timber.d("Reading $body")
-            Timber.d("Thread ${Thread.currentThread().name}")
 
             return withContext(Dispatchers.IO) {
                 val file = File(download.destination, download.name)
                 Timber.d("Creating stream File at ${file.path}")
 
-                Timber.d("Thread ${Thread.currentThread().name}")
 //                copyBody(file, body, download)
                 copyBigBytes(file, body, download)
             }

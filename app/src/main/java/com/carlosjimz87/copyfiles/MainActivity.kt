@@ -6,6 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import com.carlosjimz87.copyfiles.core.SampleData.photosDownload
 import com.carlosjimz87.copyfiles.core.SampleData.videosDownload
 import com.carlosjimz87.copyfiles.data.api.DownloaderApi
+import com.carlosjimz87.copyfiles.generators.ContentWorkerGenerator
 import com.carlosjimz87.copyfiles.managers.DownloadsManager
 import com.carlosjimz87.copyfiles.managers.FileManager
 import com.carlosjimz87.copyfiles.models.DownloadRemote
@@ -25,6 +26,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var downloaderApi: DownloaderApi
 
+    @Inject
+    lateinit var contentWorkerGenerator: ContentWorkerGenerator
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -42,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
+        Timber.d("Downloads: ${downloads.size}")
         lifecycleScope.launchWhenStarted {
             dataDestination?.let { destination ->
                 downloads.forEach { download ->

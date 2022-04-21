@@ -49,7 +49,7 @@ class ContentWorkerGenerator(context: Context) {
         val downloadsWorkList = generateDownloadWorkerList(downloads)
         val idsSum = downloads.map { it.identifier.toInt() }.reduce { acc, id -> acc + id }
 
-        var continuation = workManager!!.beginUniqueWork(
+        var continuation = workManager.beginUniqueWork(
             idsSum.toString(),
             ExistingWorkPolicy.KEEP,
             checkTokenWorker
@@ -73,7 +73,7 @@ class ContentWorkerGenerator(context: Context) {
             path
         )
 
-        workManager!!.beginUniqueWork(actionId, ExistingWorkPolicy.KEEP, checkTokenWorker)
+        workManager.beginUniqueWork(actionId, ExistingWorkPolicy.KEEP, checkTokenWorker)
             .then(downloadBackgroundWorker)
             .enqueue()
         Timber.d("Return workers ${checkTokenWorker.id} and ${downloadBackgroundWorker.id}")
@@ -124,11 +124,6 @@ class ContentWorkerGenerator(context: Context) {
         folder: String
     ): OneTimeWorkRequest {
 
-        val constraints = Constraints.Builder()
-            .setRequiresStorageNotLow(true)
-            .build()
-
-
         val worker = OneTimeWorkRequest.Builder(DownloadPlaylistWorker::class.java)
         val data = Data.Builder()
 
@@ -136,13 +131,11 @@ class ContentWorkerGenerator(context: Context) {
         data.putString("folder", folder)
 
         worker.setInputData(data.build())
-        //worker.setConstraints(constraints)
         worker.setBackoffCriteria(
             BackoffPolicy.LINEAR,
             TIMEOUT,
             TimeUnit.MILLISECONDS
         )
-
 
         Timber.d("Downloading playlist content id:$actionID f:$folder")
         return worker.addTag("download_playlist").build()
