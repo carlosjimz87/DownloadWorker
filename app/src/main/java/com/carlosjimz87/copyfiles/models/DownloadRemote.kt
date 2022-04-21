@@ -9,6 +9,13 @@ data class DownloadRemote(
     val destination: String = "",
     val url: String = "",
     val shouldCopy: Boolean = true,
-    val name: String = if (type=="video") "$id$VIDEO_EXT" else "$id$IMAGE_EXT",
+    val ext : String = url.ext(type),
+    val name: String = "$id$ext",
     var startTime: Long = 0L
 )
+
+fun String.ext(type: String = "video"): String {
+    val default = if (type == "video") VIDEO_EXT else IMAGE_EXT
+    val tempExt = substringAfterLast(delimiter = '.', missingDelimiterValue = default)
+    return if (tempExt.isNotEmpty() && !tempExt.contains('/')) ".$tempExt" else default
+}

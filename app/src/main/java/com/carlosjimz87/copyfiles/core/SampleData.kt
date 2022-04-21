@@ -39,7 +39,7 @@ object SampleData {
         DownloadRemote(
             id = 6L,
             type = VIDEO_TYPE,
-            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/P%26B-v4.mp4", // big
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/1_samsung_live_callao_1044x1800_03092021.mp4", // big
         )
     )
 }
