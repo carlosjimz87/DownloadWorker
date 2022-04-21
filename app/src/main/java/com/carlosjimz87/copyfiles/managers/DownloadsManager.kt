@@ -17,9 +17,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.io.RandomAccessFile
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -78,8 +76,8 @@ class DownloadsManager @Inject constructor(
                 val file = File(download.destination, download.name)
                 Timber.d("Creating stream File at ${file.path}")
 
-//                copyBody(file, body, download)
-                copyBigBytes(file, body, download)
+                FileManagerKt.copyBytes(body.byteStream(), file)
+                download
             }
         }
         if (!response.isSuccessful) {
@@ -89,51 +87,6 @@ class DownloadsManager @Inject constructor(
         Timber.e("Unknown error $response")
         throw UnknownError("Unknown error")
     }
-
-    private fun copyBody(
-        file: File,
-        body: ResponseBody,
-        download: DownloadRemote
-    ): DownloadRemote {
-        val outStream = file.outputStream()
-
-        Timber.d("Writing $body to stream $outStream")
-        try {
-            outStream.use { stream ->
-                bytesCopy(body, stream)
-                Timber.d("Download completed")
-                download
-            }
-        } catch (e: IOException) {
-            Timber.e("Error writing to stream ${e.message}")
-        } catch (e: OutOfMemoryError) {
-            Timber.e("Error writing to stream ${e.message}")
-        }
-        return download
-    }
-
-
-    private fun copyBigBytes(file: File, body: ResponseBody, download: DownloadRemote): DownloadRemote {
-        val randomAccessFile = RandomAccessFile(file, "rw")
-
-        body.byteStream().use { inputStream ->
-            val buffer = ByteArray(1024)
-            var len: Int
-            while (inputStream.read(buffer).also { len = it } != -1) {
-                randomAccessFile.write(buffer, 0, len)
-            }
-            randomAccessFile.close()
-        }
-        return download
-    }
-
-    private fun bytesCopy(body: ResponseBody, stream: FileOutputStream) {
-        body.byteStream().use { inputStream ->
-            stream.write(inputStream.readBytes())
-            stream.flush()
-        }
-    }
-
 
     private fun executeDownload(download: DownloadRemote) {
 

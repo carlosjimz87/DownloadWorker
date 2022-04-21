@@ -2,8 +2,13 @@ package com.carlosjimz87.copyfiles.managers
 
 import android.content.Context
 import com.carlosjimz87.copyfiles.core.Constants
+import com.carlosjimz87.copyfiles.models.DownloadRemote
+import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.io.RandomAccessFile
 
 class FileManager private constructor(
     private val context: Context,
