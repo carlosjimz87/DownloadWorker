@@ -14,11 +14,11 @@ interface DownloaderApi {
         @Url fileUrl: String
     ): Response<ResponseBody>
 
-
-    @Streaming
-    @GET("/{type}/{id}/download/?search_query=&tracking_id=9715odxld8v")
-    suspend fun getFile(
-        @Path("type") type: String,
-        @Path("id") id: Long,
-        ): Response<ResponseBody>
+//
+//    @Streaming
+//    @GET("/{type}/{id}/download/?search_query=&tracking_id=9715odxld8v")
+//    suspend fun getFile(
+//        @Path("type") type: String,
+//        @Path("id") id: Long,
+//        ): Response<ResponseBody>
 }

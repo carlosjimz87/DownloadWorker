@@ -4,6 +4,7 @@ plugins {
     id 'kotlin-kapt'
     id "org.jetbrains.kotlin.plugin.serialization"
     id "dagger.hilt.android.plugin"
+    id "kotlin-android-extensions"
 }
 
 android {

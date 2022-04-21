@@ -34,12 +34,12 @@ object SampleData {
         DownloadRemote(
             id = 5L,
             type = VIDEO_TYPE,
-            url = "https://www.pexels.com/video/8116496/download/",
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/365_0910_BlueBayou_HD.mp4", // big
         ),
         DownloadRemote(
             id = 6L,
             type = VIDEO_TYPE,
-            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/365_0910_BlueBayou_HD.mp4", // big
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/P%26B-v4.mp4", // big
         )
     )
 }
