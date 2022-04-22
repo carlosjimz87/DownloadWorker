@@ -14,7 +14,6 @@ import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
 import java.io.IOException

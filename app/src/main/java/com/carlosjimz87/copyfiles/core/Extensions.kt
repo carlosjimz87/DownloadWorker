@@ -74,3 +74,28 @@ fun File.copyToF(
 
     return target
 }
+
+fun File.generateChecksum(): String {
+    val inputStream = inputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    var bytes = inputStream.read(buffer)
+    val digest: MessageDigest = MessageDigest.getInstance("SHA-512")
+
+    while (bytes >= 0) {
+        digest.digest(buffer, 0, bytes)
+        bytes = inputStream.read(buffer)
+    }
+
+    return buffer.printableHexString()
+}
+
+fun ByteArray.printableHexString(): String {
+    val hexString: StringBuilder = StringBuilder()
+    for (messageDigest: Byte in this) {
+        var h: String = Integer.toHexString(0xFF and messageDigest.toInt())
+        while (h.length < 2)
+            h = "0$h"
+        hexString.append(h)
+    }
+    return hexString.toString()
+}

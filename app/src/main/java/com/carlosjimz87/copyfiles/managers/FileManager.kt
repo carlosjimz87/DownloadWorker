@@ -2,13 +2,8 @@ package com.carlosjimz87.copyfiles.managers
 
 import android.content.Context
 import com.carlosjimz87.copyfiles.core.Constants
-import com.carlosjimz87.copyfiles.models.DownloadRemote
-import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import java.io.RandomAccessFile
 
 class FileManager private constructor(
     private val context: Context,
@@ -50,7 +45,7 @@ class FileManager private constructor(
     }
 
     @Throws(Exception::class)
-    private fun createAndDeleteFile(path: String, filename: String): Boolean {
+    fun createAndDeleteFile(path: String, filename: String): Boolean {
         Timber.d("Checking $path")
         return try {
             val file = File(path, filename)
@@ -69,5 +64,6 @@ class FileManager private constructor(
             false
         }
     }
+
 
 }
