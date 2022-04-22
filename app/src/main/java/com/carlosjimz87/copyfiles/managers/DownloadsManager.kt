@@ -12,6 +12,7 @@ import android.os.Environment
 import arrow.core.Either
 import arrow.fx.IO
 import com.carlosjimz87.copyfiles.core.Constants.BASE_URL
+import com.carlosjimz87.copyfiles.core.Utils
 import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +83,7 @@ class DownloadsManager @Inject constructor(
                     val file = File(download.destination, download.name)
                     Timber.d("Creating stream File at ${file.path}")
 
-                    if (FileManagerKt.copyBytes(body.byteStream(), file, null)) {
+                    if (Utils.copyBytes(body.byteStream(), file, null)) {
                         download
                     } else throw IOException("Error copying file")
                 }
