@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import java.lang.Exception
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -31,8 +30,8 @@ class DownloadContentWorker(
     override suspend fun doWork(): Result {
         startForegroundService()
         val contentID = inputData.getInt("content_id", 0)
-        val folder = inputData.getString("folder")
-        val filename = inputData.getString("filename")
+        val folder = inputData.getString("folder") ?: ""
+        val filename = inputData.getString("filename") ?: ""
         val md5 = inputData.getString("md5")
         Timber.d("Executing Content DownloadWorker for $contentID file: $filename to folder: $folder md5 $md5")
 
@@ -47,22 +46,21 @@ class DownloadContentWorker(
             when {
                 runAttemptCount < RETRIES -> {
                     try {
-                        downloadsManager.download(download, DownloadsManager.METHOD.RETROFIT)
-                        Result.success()
-                    }
-                    catch (e:Exception){
+                        downloadsManager.download(download, DownloadsManager.METHOD.RETROFIT).fold(
+                            // error
+                            {
+                                Timber.d("Download failed $filename")
+                                Result.retry()
+                            },
+                            // succeeded
+                            {
+                                Timber.d("Downloaded $filename")
+                                Result.success()
+                            }
+                        )
+                    } catch (e: Exception) {
                         Result.failure()
                     }
-//                        .fold(
-//                        {
-//                            Timber.e("Error ${it.cause}")
-//                            Result.retry()
-//                        },
-//                        {
-//                            Timber.d("Content downloaded $contentID")
-//                            Result.success()
-//                        }
-//                    )
                 }
                 else -> {
                     Result.failure()

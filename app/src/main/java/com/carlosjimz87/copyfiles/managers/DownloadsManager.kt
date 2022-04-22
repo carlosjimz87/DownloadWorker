@@ -9,6 +9,8 @@ import android.content.IntentFilter
 import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
+import arrow.core.Either
+import arrow.fx.IO
 import com.carlosjimz87.copyfiles.core.Constants.BASE_URL
 import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.models.DownloadRemote
@@ -38,11 +40,14 @@ class DownloadsManager @Inject constructor(
     suspend fun download(
         download: DownloadRemote,
         method: METHOD = METHOD.RETROFIT
-    ): DownloadRemote {
+    ): Either<Throwable, DownloadRemote> {
 
         return when (method) {
             METHOD.RETROFIT -> downloadWithRetrofit(download)
-            METHOD.MANAGER -> downloadWithManager(download)
+                .attempt()
+                .unsafeRunSync()
+//            METHOD.MANAGER -> downloadWithManager(download)
+            else -> throw IllegalArgumentException("Method not implemented")
         }
     }
 
@@ -62,31 +67,33 @@ class DownloadsManager @Inject constructor(
     }
 
     @Throws(Exception::class)
-    suspend fun downloadWithRetrofit(download: DownloadRemote): DownloadRemote {
-        Timber.d("Downloading ${download.name} with Retrofit")
+    suspend fun downloadWithRetrofit(download: DownloadRemote): IO<DownloadRemote> {
+        return IO {
+
+            Timber.d("Downloading ${download.name} with Retrofit")
 //        val response = downloaderApi.getFile(download.type, download.id)
-        val response = downloaderApi.getFile(download.url)
+            val response = downloaderApi.getFile(download.url)
 
-        response.body()?.let { body ->
+            response.body()?.let { body ->
 
-            Timber.d("Reading $body")
+                Timber.d("Reading $body")
 
-            return withContext(Dispatchers.IO) {
-                val file = File(download.destination, download.name)
-                Timber.d("Creating stream File at ${file.path}")
+                withContext(Dispatchers.IO) {
+                    val file = File(download.destination, download.name)
+                    Timber.d("Creating stream File at ${file.path}")
 
-                if(FileManagerKt.copyBytes(body.byteStream(), file, null)){
-                    download
+                    if (FileManagerKt.copyBytes(body.byteStream(), file, null)) {
+                        download
+                    } else throw IOException("Error copying file")
                 }
-                else throw IOException("Error copying file")
             }
+            if (!response.isSuccessful) {
+                Timber.e("Network error ${response.code()}: ${response.message()}")
+                throw NetworkErrorException("Network error ${response.code()}: ${response.message()}")
+            }
+            Timber.e("Unknown error $response")
+            throw UnknownError("Unknown error")
         }
-        if (!response.isSuccessful) {
-            Timber.e("Network error ${response.code()}: ${response.message()}")
-            throw NetworkErrorException("Network error ${response.code()}: ${response.message()}")
-        }
-        Timber.e("Unknown error $response")
-        throw UnknownError("Unknown error")
     }
 
     private fun executeDownload(download: DownloadRemote) {
