@@ -1,5 +1,6 @@
 package com.carlosjimz87.copyfiles.managers
 
+import com.carlosjimz87.copyfiles.core.reallyExists
 import timber.log.Timber
 import java.io.*
 
@@ -40,39 +41,25 @@ object FileManagerKt {
             }
         }
 
-//        try {
-//            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-//            var bytes = fileInputStream.read(buffer)
-//            while (bytes >= 0) {
-//                destination.write(buffer, 0, bytes)
-//                bytes = fileInputStream.read(buffer)
-//            }
-//        } catch (exception: Exception) {
-//            exception.printStackTrace()
-//        } finally {
-//            destination.flush()
-//            destination.close()
-//            fileInputStream.close()
-//        }
     }
 
-    fun copyBytes(source: InputStream, destination: File): Boolean {
+    fun copyBytes(source: InputStream, destination: File, md5: String?): Boolean {
+
         val randomAccessFile = RandomAccessFile(destination, "rw")
-
-        source.use { inputStream ->
-            try {
-
-                val buffer = ByteArray(1024)
-                var len: Int
-                while (inputStream.read(buffer).also { len = it } != -1) {
-                    randomAccessFile.write(buffer, 0, len)
+        randomAccessFile.use { raf ->
+            source.use { inputStream ->
+                return try {
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var len: Int
+                    while (inputStream.read(buffer).also { len = it } != -1) {
+                        raf.write(buffer, 0, len)
+                    }
+                    destination.reallyExists(md5)
+                } catch (e: IOException) {
+                    Timber.e("Error copying bytes: ${e.message}")
+                    false
                 }
-                randomAccessFile.close()
-            } catch (e: IOException) {
-                Timber.e("Error copying bytes: ${e.message}")
-                return false
             }
-            return true
         }
     }
 

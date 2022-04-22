@@ -2,6 +2,7 @@ package com.carlosjimz87.copyfiles.core
 
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.*
@@ -98,4 +99,15 @@ fun ByteArray.printableHexString(): String {
         hexString.append(h)
     }
     return hexString.toString()
+}
+
+fun File.reallyExists(md5: String?): Boolean {
+    return this.exists() && this.isFile && this.canRead() && md5?.let { this.verifyMd5(it) } ?: true
+}
+
+fun File.verifyMd5(md5: String): Boolean {
+    if (this.generateChecksum() == md5) {
+        return true
+    }
+    throw FileNotFoundException("MD5s do not match")
 }

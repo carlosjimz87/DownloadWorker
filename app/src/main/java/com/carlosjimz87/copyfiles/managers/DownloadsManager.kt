@@ -75,8 +75,10 @@ class DownloadsManager @Inject constructor(
                 val file = File(download.destination, download.name)
                 Timber.d("Creating stream File at ${file.path}")
 
-                FileManagerKt.copyBytes(body.byteStream(), file)
-                download
+                if(FileManagerKt.copyBytes(body.byteStream(), file, null)){
+                    download
+                }
+                else throw IOException("Error copying file")
             }
         }
         if (!response.isSuccessful) {
