@@ -62,7 +62,7 @@ object AppModule {
     fun provideDownloaderApi(httpClient: OkHttpClient): DownloaderApi {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(httpClient)
+//            .client(httpClient) // retrofit logging cause OutOfMemoryError sometimes. uncomment only for debug
             .build()
             .create(DownloaderApi::class.java)
     }

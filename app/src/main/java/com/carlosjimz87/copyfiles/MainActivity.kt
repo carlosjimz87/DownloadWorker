@@ -2,8 +2,8 @@ package com.carlosjimz87.copyfiles
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.carlosjimz87.copyfiles.core.SampleData.photosDownload
@@ -35,7 +35,9 @@ class MainActivity : AppCompatActivity() {
 
     private var downloading: MutableLiveData<Boolean> = MutableLiveData(false)
     private var message: MutableLiveData<String> = MutableLiveData("Init")
-    private var downloadCounter: Int = 1
+    private var downloadCounter: Int = 0
+    private var totalToDownload: Int = photosDownload.size + videosDownload.size
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -48,9 +50,12 @@ class MainActivity : AppCompatActivity() {
         Timber.w("DATA_DESTINATION: $dataDestination")
         Timber.w("EXTERNAL_DESTINATION: $extDestination")
 
-        val finalDownloads = photosDownload.plus(videosDownload)
         subscribeObservers()
-        executeDownload(extDestination, finalDownloads)
+
+        downloading.value = true
+        executeDownload(dataDestination, photosDownload)
+        executeDownload(extDestination, videosDownload)
+        downloading.value = false
     }
 
     private fun subscribeObservers() {
@@ -62,7 +67,7 @@ class MainActivity : AppCompatActivity() {
 
         downloading.observe(this) { d ->
             Timber.d("DOWNLOADING: $d")
-            when(d){
+            when (d) {
                 true -> {
                     progressCircular.visibility = View.VISIBLE
                 }
@@ -73,21 +78,23 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
     private fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
         Timber.d("Downloads: ${downloads.size}")
         lifecycleScope.launchWhenStarted {
 
             dataDestination?.let { destination ->
-                downloading.value =true
                 downloads.forEach { download ->
 
+                    downloadCounter++
                     val finalDownload = download.copy(
                         destination = destination,
                         startTime = System.currentTimeMillis()
                     )
 
                     Timber.d("Proceed to download $download in $destination")
-                    message.value = "Downloading: ${download.name} ($downloadCounter)"
+                    message.value =
+                        "Downloading: ${download.name} ($downloadCounter)/$totalToDownload"
                     // execute download via RETROFIT
 
                     withContext(Dispatchers.IO) {
@@ -97,7 +104,6 @@ class MainActivity : AppCompatActivity() {
                                 DownloadsManager.METHOD.RETROFIT
                             )
 
-                            downloadCounter++
                             Timber.d("DOWNLOAD SUCCEEDED ${download.name}")
                         } catch (e: Exception) {
                             Timber.e("DOWNLOAD FAILED: ${download.name} [${e.message}]")
@@ -106,8 +112,8 @@ class MainActivity : AppCompatActivity() {
 
                 }
 
-                downloading.value =false
                 message.value = "Downloads completed: $downloadCounter"
+                Toast.makeText(baseContext, "Downloads completed", Toast.LENGTH_SHORT).show()
             }
 
         }
