@@ -166,7 +166,7 @@ class FileManager private constructor(
             }
         }
 
-        private fun copyBigBytes(source: InputStream, path: String, filename: String): Boolean {
+        fun copyBigBytes(source: InputStream, path: String, filename: String): Boolean {
             Timber.d("Copy big bytes")
             val destinationFile = File(path, filename)
             val randomAccessFile = RandomAccessFile(destinationFile, "rwd")
@@ -174,12 +174,13 @@ class FileManager private constructor(
                 source.use { inputStream ->
                     return try {
                         val buffer = ByteArray(DEFAULT_BUFFER_SIZE * 2)
+
                         var len: Int
                         while (inputStream.read(buffer).also { len = it } != -1) {
                             raf.write(buffer, 0, len)
                         }
                         true
-                    } catch (e: java.lang.Exception) {
+                    } catch (e: Exception) {
                         Timber.e("Error copying bytes: ${e.message}")
                         false
                     }
@@ -187,5 +188,4 @@ class FileManager private constructor(
             }
         }
     }
-
 }

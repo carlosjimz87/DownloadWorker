@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
 
             testDownloadCopy(dataFolder, externalFolder)
 
-            testZip(dataFolder, downloadsFolder)
+//            testZip(dataFolder, downloadsFolder)
 
             downloading.value = false
         }

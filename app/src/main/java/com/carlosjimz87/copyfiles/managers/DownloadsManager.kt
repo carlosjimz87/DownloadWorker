@@ -70,17 +70,19 @@ class DownloadsManager @Inject constructor(
     suspend fun downloadWithRetrofit(download: DownloadRemote): IO<DownloadRemote> {
         return IO {
 
-            Timber.d("Downloading ${download.name} with Retrofit")
-//        val response = downloaderApi.getFile(download.type, download.id)
+            Timber.d("Downloading ${download.name} with Retrofit [Thread: ${Thread.currentThread().name}]")
             val response = downloaderApi.getFile(download.url)
 
             response.body()?.let { body ->
 
                 Timber.d("Reading ${body.contentLength()}")
 
-                withContext(Dispatchers.IO) {
-                    if (FileManager.copyBytes(body, download.destination, download.name)) {
-                        download
+
+                return@IO withContext(Dispatchers.IO) {
+                    Timber.d("Creating stream File at ${download.destination}/${download.name} [Thread: ${Thread.currentThread().name}]")
+
+                    if (FileManager.copyBigBytes(body.byteStream(), download.destination, download.name)) {
+                        return@withContext download
                     } else throw IOException("Error copying file")
                 }
             }

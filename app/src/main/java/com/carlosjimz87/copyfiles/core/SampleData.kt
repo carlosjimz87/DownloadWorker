@@ -42,7 +42,7 @@ object SampleData {
         DownloadRemote(
             id = 6L,
             type = VIDEO_TYPE,
-            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/fundacion telefonica.mp4", // big
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/BIGcontent/fundacion%20telefonica.mp4", // big
         )
     )
 }
