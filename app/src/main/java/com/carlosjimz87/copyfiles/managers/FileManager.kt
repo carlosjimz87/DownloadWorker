@@ -72,7 +72,7 @@ class FileManager private constructor(
 
             val size = body.contentLength()
             Timber.d("Copying length -> $size")
-            return if (size < 200000000) {
+            return if (size < 100000000) {
                 copySmallBytes(body.byteStream(), destination, filename)
             } else {
                 copyBigBytes(body.byteStream(), destination, filename)
@@ -169,7 +169,7 @@ class FileManager private constructor(
         fun copyBigBytes(source: InputStream, path: String, filename: String): Boolean {
             Timber.d("Copy big bytes")
             val destinationFile = File(path, filename)
-            val randomAccessFile = RandomAccessFile(destinationFile, "rwd")
+            val randomAccessFile = RandomAccessFile(destinationFile, "rw")
             randomAccessFile.use { raf ->
                 source.use { inputStream ->
                     return try {

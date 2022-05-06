@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
 
             testDownloadCopy(dataFolder, externalFolder)
 
-//            testZip(dataFolder, downloadsFolder)
+            testZip(dataFolder, downloadsFolder)
 
             downloading.value = false
         }
@@ -75,8 +75,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
-//        executeDownload(dataFolder, zipDownload)
-//        executeDownload(dataFolder, photosDownload)
+        executeDownload(dataFolder, zipDownload)
+        executeDownload(dataFolder, photosDownload)
         executeDownload(externalFolder, videosDownload)
     }
 
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
                 val files = FileManager.filesInFolder(File(dataFolderPath))
 
                 val pairs = hashMapOf<String, String?>()
-                files?.forEach { file ->
+                files?.filter { it.extension == "zip" }?.forEach { file ->
                     pairs[file.name] = downloadsFolderPath
                 }
                 Timber.d("To Unzip: ${files?.size}")
