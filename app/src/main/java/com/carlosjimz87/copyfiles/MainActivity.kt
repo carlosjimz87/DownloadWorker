@@ -74,41 +74,43 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
+    private suspend fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
 //        executeDownload(dataFolder, zipDownload)
 //        executeDownload(dataFolder, photosDownload)
         executeDownload(externalFolder, videosDownload)
     }
 
-    private fun testZip(dataFolderPath: String?, downloadsFolderPath: String? = null) {
-        if (dataFolderPath?.isNotEmpty() == true) {
-            val files = FileManager.filesInFolder(File(dataFolderPath))
+    private suspend fun testZip(dataFolderPath: String?, downloadsFolderPath: String? = null) {
+        withContext(Dispatchers.IO){
+            if (dataFolderPath?.isNotEmpty() == true) {
+                val files = FileManager.filesInFolder(File(dataFolderPath))
 
-            val pairs = hashMapOf<String, String?>()
-            files?.forEach { file ->
-                pairs[file.name] = downloadsFolderPath
-            }
-            Timber.d("To Unzip: ${files?.size}")
+                val pairs = hashMapOf<String, String?>()
+                files?.forEach { file ->
+                    pairs[file.name] = downloadsFolderPath
+                }
+                Timber.d("To Unzip: ${files?.size}")
 
-            pairs.entries.forEach { (filename, destination) ->
-                unpackZip(
+                pairs.entries.forEach { (filename, destination) ->
+                    unpackZip(
 //                    sourcePath = extDestination + File.separator + PLANTILLAS_FOLDER,
-                    sourcePath = dataFolderPath,
-                    zipname = filename,
-                    destination = destination
-                ).attempt()
-                    .unsafeRunSync().fold(
-                        {
-                            Timber.e("Error while Unzip $filename ${it.message}")
-                        },
-                        {
-                            if (it) {
-                                Timber.d("Unzip $filename was successful")
-                            } else {
-                                Timber.e("Error while Unzip $filename")
+                        sourcePath = dataFolderPath,
+                        zipname = filename,
+                        destination = destination
+                    ).attempt()
+                        .unsafeRunSync().fold(
+                            {
+                                Timber.e("Error while Unzip $filename ${it.message}")
+                            },
+                            {
+                                if (it) {
+                                    Timber.d("Unzip $filename was successful")
+                                } else {
+                                    Timber.e("Error while Unzip $filename")
+                                }
                             }
-                        }
-                    )
+                        )
+                }
             }
         }
     }
@@ -170,9 +172,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
+    private suspend fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
         Timber.d("To Download: ${downloads.size}")
-        lifecycleScope.launchWhenStarted {
 
             dataDestination?.let { destination ->
                 downloads.forEach { download ->
@@ -208,5 +209,4 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-    }
 }
