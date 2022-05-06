@@ -12,6 +12,7 @@ object Constants {
     const val WRITE_TIMEOUT_SEC = 30L
     const val VIDEO_TYPE = "video"
     const val PHOTO_TYPE = "photos"
+    const val ZIP_TYPE = "zip"
     const val PACK_NAME = "com.carlosjimz87.copyfiles"
-    const val SPOTDYNA_PACK_NAME = "com.onthespot.androidplayerl"
+    const val SPOTDYNA_PACK_NAME = "com.onthespot.androidplayer"
 }
