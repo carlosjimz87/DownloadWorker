@@ -6,6 +6,7 @@ import com.carlosjimz87.copyfiles.core.Constants
 import okhttp3.ResponseBody
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.io.RandomAccessFile
 import java.util.zip.ZipEntry
@@ -187,5 +188,25 @@ class FileManager private constructor(
                 }
             }
         }
+
+
+        fun copyFileAndDelete(downloadedFile: File, destinationFile: File) {
+            try {
+                downloadedFile.copyTo(destinationFile, true)
+                downloadedFile.delete()
+            } catch (ex: Exception) {
+                when (ex) {
+                    is NoSuchFileException, is IOException, is FileSystemException -> {
+                        Timber.e("Error copying/deleting ${downloadedFile.path} (${ex.message}")
+                        throw ex
+                    }
+                    else -> {/*ignored*/
+                    }
+                }
+            }
+        }
+
     }
+
+
 }

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CopyFiles</string>
+    <string name="external_permission_text">External Permission is neccessary</string>
 </resources>

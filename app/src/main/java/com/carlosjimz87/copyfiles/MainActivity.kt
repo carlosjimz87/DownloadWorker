@@ -1,5 +1,7 @@
 package com.carlosjimz87.copyfiles
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -20,12 +22,18 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import pub.devrel.easypermissions.AppSettingsDialog
+import pub.devrel.easypermissions.EasyPermissions
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
+
+    companion object {
+        const val PERMISSION_WRITE_EXTERNAL_STORAGE = 1
+    }
 
     private val PLANTILLAS_FOLDER = "OTS${File.separator}MM${File.separator}PLANTILLAS"
 
@@ -51,6 +59,13 @@ class MainActivity : AppCompatActivity() {
 
         manager = FileManager.Builder.init(baseContext)
 
+        subscribeObservers()
+
+        init()
+
+    }
+
+    private fun getLocations(): Triple<String?, String?, String?> {
         val downloadsFolder = manager.getDownloadsLocation()
         val dataFolder = manager.getDataLocation()
         val externalFolder = manager.getExtLocation()
@@ -59,20 +74,49 @@ class MainActivity : AppCompatActivity() {
         Timber.w("DATA: $dataFolder")
         Timber.w("EXTERNAL: $externalFolder")
 
-        subscribeObservers()
-
-
-        lifecycleScope.launchWhenStarted {
-            downloading.value = true
-
-            testDownloadCopy(dataFolder, externalFolder)
-
-            testZip(dataFolder, downloadsFolder)
-
-            downloading.value = false
-        }
-
+        return Triple(downloadsFolder, dataFolder, externalFolder)
     }
+
+    private fun init() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (hasWriteExternalStoragePermission()) {
+                start()
+            } else {
+                requestWriteExternalStoragePermission()
+            }
+        } else {
+            start()
+        }
+    }
+
+    private fun start() {
+        getLocations().let { (downloadsFolder, dataFolder, externalFolder) ->
+            lifecycleScope.launchWhenStarted {
+                downloading.value = true
+
+                testDownloadCopy(dataFolder, externalFolder)
+
+                testZip(dataFolder, downloadsFolder)
+
+                downloading.value = false
+            }
+        }
+    }
+
+    private fun hasWriteExternalStoragePermission() =
+        EasyPermissions.hasPermissions(
+            baseContext,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
+    private fun requestWriteExternalStoragePermission() =
+        EasyPermissions.requestPermissions(
+            this,
+            resources.getString(R.string.external_permission_text),
+            PERMISSION_WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
 
     private suspend fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
         executeDownload(dataFolder, zipDownload)
@@ -81,7 +125,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun testZip(dataFolderPath: String?, downloadsFolderPath: String? = null) {
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
             if (dataFolderPath?.isNotEmpty() == true) {
                 val files = FileManager.filesInFolder(File(dataFolderPath))
 
@@ -175,38 +219,62 @@ class MainActivity : AppCompatActivity() {
     private suspend fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
         Timber.d("To Download: ${downloads.size}")
 
-            dataDestination?.let { destination ->
-                downloads.forEach { download ->
+        dataDestination?.let { destination ->
+            downloads.forEach { download ->
 
-                    downloadCounter++
-                    val finalDownload = download.copy(
-                        destination = destination,
-                        startTime = System.currentTimeMillis()
-                    )
+                downloadCounter++
+                val finalDownload = download.copy(
+                    destination = destination,
+                    startTime = System.currentTimeMillis()
+                )
 
-                    Timber.d("Proceed to download $download in $destination")
-                    message.value =
-                        "Downloading: ${download.name} ($downloadCounter)/$totalToDownload"
-                    // execute download via RETROFIT
+                Timber.d("Proceed to download $download in $destination")
+                message.value =
+                    "Downloading: ${download.name} ($downloadCounter)/$totalToDownload"
+                // execute download via RETROFIT
 
-                    withContext(Dispatchers.IO) {
-                        try {
-                            downloadCopyManager.download(
-                                finalDownload,
-                                DownloadsManager.METHOD.RETROFIT
-                            )
+                withContext(Dispatchers.IO) {
+                    try {
+                        downloadCopyManager.download(
+                            finalDownload,
+                            DownloadsManager.METHOD.RETROFIT
+                        )
 
-                            Timber.d("DOWNLOAD SUCCEEDED ${download.name}")
-                        } catch (e: Exception) {
-                            Timber.e("DOWNLOAD FAILED: ${download.name} [${e.message}]")
-                        }
+                        Timber.d("DOWNLOAD SUCCEEDED ${download.name}")
+                    } catch (e: Exception) {
+                        Timber.e("DOWNLOAD FAILED: ${download.name} [${e.message}]")
                     }
-
                 }
 
-                message.value = "Downloads completed: $downloadCounter"
-                Toast.makeText(baseContext, "Downloads completed", Toast.LENGTH_SHORT).show()
             }
 
+            message.value = "Downloads completed: $downloadCounter"
+            Toast.makeText(baseContext, "Downloads completed", Toast.LENGTH_SHORT).show()
         }
+
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            AppSettingsDialog.Builder(this).build().show()
+        } else {
+            requestWriteExternalStoragePermission()
+        }
+        Toast.makeText(baseContext, "Write External Permission Was Denied", Toast.LENGTH_SHORT)
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
 }

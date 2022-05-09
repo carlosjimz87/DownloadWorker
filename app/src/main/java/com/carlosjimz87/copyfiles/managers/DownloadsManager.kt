@@ -119,36 +119,6 @@ class DownloadsManager @Inject constructor(
         downloadManager.enqueue(request)
     }
 
-    private fun checkIfAlreadyDownloaded(downloadedFile: File): Boolean {
-        return downloadedFile.exists()
-    }
-
-    private fun checkIfPrevDownloading(file: File): Boolean {
-        var isDownloading = false
-        val query = DownloadManager.Query()
-        query.setFilterByStatus(
-            DownloadManager.STATUS_PAUSED or
-                    DownloadManager.STATUS_PENDING or
-                    DownloadManager.STATUS_RUNNING or
-                    DownloadManager.STATUS_SUCCESSFUL
-        )
-        val cur: Cursor = downloadManager.query(query)
-        cur.use {
-            val col = it.getColumnIndex(
-                DownloadManager.COLUMN_LOCAL_FILENAME
-            )
-            cur.moveToFirst()
-            while (!cur.isAfterLast) {
-                isDownloading = isDownloading || (file.path.trim() == cur.getString(col).trim())
-                Timber.d("Checking ${file.path.trim()} == ${cur.getString(col).trim()}")
-                if (isDownloading) break
-                cur.moveToNext()
-            }
-        }
-        return isDownloading
-    }
-
-
     private fun copyFileAndDelete(
         download: DownloadRemote
     ): DownloadRemote {
@@ -157,19 +127,7 @@ class DownloadsManager @Inject constructor(
 
         Timber.d("Copying file ${download.name} from $downloadsFolder to ${download.destination}")
 
-        try {
-            downloadedFile.copyTo(destinationFile, true)
-            downloadedFile.delete()
-        } catch (ex: Exception) {
-            when (ex) {
-                is NoSuchFileException, is IOException, is FileSystemException -> {
-                    Timber.e("Error copying/deleting ${downloadedFile.path} (${ex.message}")
-                    throw ex
-                }
-                else -> {/*ignored*/
-                }
-            }
-        }
+        FileManager.copyFileAndDelete(downloadedFile, destinationFile)
 
         return download
     }
