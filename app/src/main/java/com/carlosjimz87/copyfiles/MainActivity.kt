@@ -18,6 +18,9 @@ import com.carlosjimz87.copyfiles.managers.DownloadsManager
 import com.carlosjimz87.copyfiles.managers.FileManager
 import com.carlosjimz87.copyfiles.managers.FileManager.Companion.unzipFile
 import com.carlosjimz87.copyfiles.models.DownloadRemote
+import com.microsoft.appcenter.AppCenter
+import com.microsoft.appcenter.analytics.Analytics
+import com.microsoft.appcenter.crashes.Crashes
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +59,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        setupAppCenter()
 
         manager = FileManager.Builder.init(baseContext)
 
@@ -63,6 +67,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         init()
 
+    }
+
+    private fun setupAppCenter(){
+        AppCenter.start(
+            application, "5879625b-35a0-4120-bd90-6f68e04c184d",
+            Analytics::class.java, Crashes::class.java
+        )
     }
 
     private fun getLocations(): Triple<String?, String?, String?> {

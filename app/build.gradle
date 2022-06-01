@@ -78,6 +78,11 @@ dependencies {
     // EASY PERMISSIONS
     implementation 'pub.devrel:easypermissions:3.0.0'
 
+    // APPCENTER
+    def appCenterSdkVersion = '4.3.1'
+    implementation "com.microsoft.appcenter:appcenter-analytics:${appCenterSdkVersion}"
+    implementation "com.microsoft.appcenter:appcenter-crashes:${appCenterSdkVersion}"
+
     testImplementation 'junit:junit:4.13.2'
     testImplementation "androidx.test.ext:truth:1.4.0"
     androidTestImplementation 'androidx.test:rules:1.4.0'
