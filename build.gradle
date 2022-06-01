@@ -16,3 +16,17 @@ plugins {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+
+task copyResDirectoryToClasses(type:Copy){
+    def sourceDir = layout.buildDirectory.dir("src/test/res")
+    def destDir = layout.buildDirectory.dir("/intermediates/classes/test/debug/res")
+    from sourceDir
+    into destDir
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name == "assembleDebug") {
+        task.finalizedBy copyResDirectoryToClasses
+    }
+}
