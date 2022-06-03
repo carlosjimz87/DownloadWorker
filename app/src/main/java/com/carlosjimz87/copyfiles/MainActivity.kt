@@ -34,7 +34,13 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
+    private var permissions = arrayOf(
+        // TO add a new runtime permission, add it here and ...
+        Manifest.permission.WRITE_EXTERNAL_STORAGE
+    )
+
     companion object {
+        // add the permission state flag here
         const val PERMISSION_WRITE_EXTERNAL_STORAGE = 1
     }
 
@@ -69,7 +75,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
-    private fun setupAppCenter(){
+    private fun setupAppCenter() {
         AppCenter.start(
             application, "5879625b-35a0-4120-bd90-6f68e04c184d",
             Analytics::class.java, Crashes::class.java
@@ -102,6 +108,11 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun start() {
+//        startDownloads()
+        Toast.makeText(this, "Initialization Done", Toast.LENGTH_LONG).show()
+    }
+
+    private fun startDownloads() {
         getLocations().let { (downloadsFolder, dataFolder, externalFolder) ->
             lifecycleScope.launchWhenStarted {
                 downloading.value = true
@@ -118,16 +129,21 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private fun hasWriteExternalStoragePermission() =
         EasyPermissions.hasPermissions(
             baseContext,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+            *permissions
         )
 
-    private fun requestWriteExternalStoragePermission() =
-        EasyPermissions.requestPermissions(
-            this,
-            resources.getString(R.string.external_permission_text),
-            PERMISSION_WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
+    private fun requestWriteExternalStoragePermission() {
+        if (EasyPermissions.hasPermissions(this, *permissions)) {
+            start()
+        } else {
+            EasyPermissions.requestPermissions(
+                this,
+                resources.getString(R.string.external_permission_text),
+                PERMISSION_WRITE_EXTERNAL_STORAGE,
+                *permissions
+            )
+        }
+    }
 
     private suspend fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
         executeDownload(dataFolder, zipDownload)
