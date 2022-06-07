@@ -1,11 +1,26 @@
 package com.carlosjimz87.copyfiles.core
 
+import com.carlosjimz87.copyfiles.core.Constants.APK_TYPE
 import com.carlosjimz87.copyfiles.core.Constants.PHOTO_TYPE
 import com.carlosjimz87.copyfiles.core.Constants.VIDEO_TYPE
 import com.carlosjimz87.copyfiles.core.Constants.ZIP_TYPE
 import com.carlosjimz87.copyfiles.models.DownloadRemote
 
 object SampleData {
+
+    val apkDownload = listOf(
+        DownloadRemote(
+            id = 1L,
+            type = APK_TYPE,
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/apk/android-terminal-emulator-1-0-70.apk",
+        ),
+        DownloadRemote(
+            id = 2L,
+            type = APK_TYPE,
+            url = "https://spotdyna-app.s3.eu-west-1.amazonaws.com/apk/copyfiles.apk",
+        ),
+    )
+
 
     val zipDownload = listOf(
         DownloadRemote(

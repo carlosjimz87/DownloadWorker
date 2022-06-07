@@ -13,6 +13,7 @@ object Constants {
     const val VIDEO_TYPE = "video"
     const val PHOTO_TYPE = "photos"
     const val ZIP_TYPE = "zip"
+    const val APK_TYPE = "apk"
     const val PACK_NAME = "com.carlosjimz87.copyfiles"
     const val SPOTDYNA_PACK_NAME = "com.onthespot.androidplayer"
 }

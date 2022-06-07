@@ -14,8 +14,8 @@ android {
         applicationId "com.carlosjimz87.copyfiles"
         minSdk 21
         targetSdk 32
-        versionCode 3
-        versionName "3.0"
+        versionCode 1
+        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         setProperty("archivesBaseName", "copyfiles." + versionCode + "." + versionName)
@@ -77,6 +77,9 @@ dependencies {
 
     // EASY PERMISSIONS
     implementation 'pub.devrel:easypermissions:3.0.0'
+
+    //APACHE
+    implementation 'commons-io:commons-io:2.4'
 
     // APPCENTER
     def appCenterSdkVersion = '4.3.1'

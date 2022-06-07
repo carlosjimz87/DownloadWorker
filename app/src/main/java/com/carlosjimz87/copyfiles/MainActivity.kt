@@ -1,23 +1,27 @@
 package com.carlosjimz87.copyfiles
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import arrow.fx.IO
+import com.carlosjimz87.copyfiles.core.SampleData.apkDownload
 import com.carlosjimz87.copyfiles.core.SampleData.photosDownload
 import com.carlosjimz87.copyfiles.core.SampleData.videosDownload
-import com.carlosjimz87.copyfiles.core.SampleData.zipDownload
 import com.carlosjimz87.copyfiles.data.api.DownloaderApi
 import com.carlosjimz87.copyfiles.generators.ContentWorkerGenerator
 import com.carlosjimz87.copyfiles.managers.DownloadsManager
 import com.carlosjimz87.copyfiles.managers.FileManager
 import com.carlosjimz87.copyfiles.managers.FileManager.Companion.unzipFile
+import com.carlosjimz87.copyfiles.managers.InstallManager
 import com.carlosjimz87.copyfiles.models.DownloadRemote
+import com.carlosjimz87.copyfiles.models.InstallerType
 import com.microsoft.appcenter.AppCenter
 import com.microsoft.appcenter.analytics.Analytics
 import com.microsoft.appcenter.crashes.Crashes
@@ -36,7 +40,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     private var permissions = arrayOf(
         // TO add a new runtime permission, add it here and ...
-        Manifest.permission.WRITE_EXTERNAL_STORAGE
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
     )
 
     companion object {
@@ -58,8 +63,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var downloading: MutableLiveData<Boolean> = MutableLiveData(false)
     private var message: MutableLiveData<String> = MutableLiveData("Init")
     private var downloadCounter: Int = 0
-    private var totalToDownload: Int = photosDownload.size + videosDownload.size
-    private lateinit var manager: FileManager
+    private var totalToDownload: Int = 0
+    private lateinit var fileManager: FileManager
+    private lateinit var installManager: InstallManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,12 +73,20 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         setupAppCenter()
 
-        manager = FileManager.Builder.init(baseContext)
+        fileManager = FileManager.Builder.init(baseContext)
+        installManager = InstallManager.Builder.init(this)
 
         subscribeObservers()
 
         init()
 
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        installManager.handleActivityResult(requestCode, resultCode) { result ->
+            Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun setupAppCenter() {
@@ -83,9 +97,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun getLocations(): Triple<String?, String?, String?> {
-        val downloadsFolder = manager.getDownloadsLocation()
-        val dataFolder = manager.getDataLocation()
-        val externalFolder = manager.getExtLocation()
+        val downloadsFolder = fileManager.getDownloadsLocation()
+        val dataFolder = fileManager.getDataLocation()
+        val externalFolder = fileManager.getExtLocation()
 
         Timber.w("DOWNLOADS: $downloadsFolder")
         Timber.w("DATA: $dataFolder")
@@ -95,6 +109,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun init() {
+
+        checkUnknownSources()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (hasWriteExternalStoragePermission()) {
@@ -107,22 +123,53 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // change toolbar title
+        title = "Copy Files "+ BuildConfig.VERSION_NAME
+    }
     private fun start() {
-//        startDownloads()
-        Toast.makeText(this, "Initialization Done", Toast.LENGTH_LONG).show()
+        startDownloads()
     }
 
     private fun startDownloads() {
         getLocations().let { (downloadsFolder, dataFolder, externalFolder) ->
             lifecycleScope.launchWhenStarted {
                 downloading.value = true
+                totalToDownload =
+//                    photosDownload.size +
+//                            videosDownload.size +
+                            apkDownload.size
 
                 testDownloadCopy(dataFolder, externalFolder)
 
-                testZip(dataFolder, downloadsFolder)
+//                testZip(dataFolder, downloadsFolder)
+                testApk(dataFolder, downloadsFolder)
 
                 downloading.value = false
             }
+        }
+    }
+
+    private fun checkUnknownSources() {
+        var allow = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            allow = this.packageManager.canRequestPackageInstalls()
+        } else {
+            try {
+                allow = Settings.Secure.getInt(
+                    contentResolver,
+                    Settings.Secure.INSTALL_NON_MARKET_APPS
+                ) === 1
+            } catch (e: Settings.SettingNotFoundException) {
+                e.printStackTrace()
+            }
+        }
+
+        if (!allow) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
+        } else {
+            startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
         }
     }
 
@@ -146,9 +193,21 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private suspend fun testDownloadCopy(dataFolder: String?, externalFolder: String?) {
-        executeDownload(dataFolder, zipDownload)
-        executeDownload(dataFolder, photosDownload)
-        executeDownload(externalFolder, videosDownload)
+        executeDownload(dataFolder, apkDownload)
+//        executeDownload(dataFolder, zipDownload)
+//        executeDownload(dataFolder, photosDownload)
+//        executeDownload(externalFolder, videosDownload)
+    }
+
+    private suspend fun testApk(dataFolderPath: String?, downloadsFolderPath: String? = null) {
+
+        if (dataFolderPath?.isNotEmpty() == true) {
+            val files = FileManager.filesInFolder(File(dataFolderPath))
+
+            files?.filter { it.isFile && it.extension == "apk" }?.forEach { file ->
+                installManager.install(file)
+            }
+        }
     }
 
     private suspend fun testZip(dataFolderPath: String?, downloadsFolderPath: String? = null) {
@@ -157,7 +216,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 val files = FileManager.filesInFolder(File(dataFolderPath))
 
                 val pairs = hashMapOf<String, String?>()
-                files?.filter { it.extension == "zip" }?.forEach { file ->
+                files?.filter { it.isFile && it.extension == "zip" }?.forEach { file ->
                     pairs[file.name] = downloadsFolderPath
                 }
                 Timber.d("To Unzip: ${files?.size}")
@@ -241,6 +300,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
         }
 
+
     }
 
     private suspend fun executeDownload(dataDestination: String?, downloads: List<DownloadRemote>) {
@@ -257,7 +317,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
                 Timber.d("Proceed to download $download in $destination")
                 message.value =
-                    "Downloading: ${download.name} ($downloadCounter)/$totalToDownload"
+                    "Downloading: ${download.name} from ${download.url.substring(range = (0..15))} ($downloadCounter)/$totalToDownload"
                 // execute download via RETROFIT
 
                 withContext(Dispatchers.IO) {
@@ -276,13 +336,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
 
             message.value = "Downloads completed: $downloadCounter"
-            Toast.makeText(baseContext, "Downloads completed", Toast.LENGTH_SHORT).show()
         }
 
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
         Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+        start()
     }
 
     override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
